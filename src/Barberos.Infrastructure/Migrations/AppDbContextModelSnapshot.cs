@@ -28,14 +28,24 @@ namespace Barberos.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClientId")
-                        .HasColumnType("uuid");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("EndAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("GuestName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
+                    b.Property<string>("GuestPhone")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid>("ManageToken")
+                        .HasColumnType("uuid");
 
                     b.Property<Guid>("MasterId")
                         .HasColumnType("uuid");
@@ -51,7 +61,10 @@ namespace Barberos.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ClientId");
+                    b.HasIndex("GuestPhone");
+
+                    b.HasIndex("ManageToken")
+                        .IsUnique();
 
                     b.HasIndex("ServiceId");
 
@@ -137,6 +150,11 @@ namespace Barberos.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
                     b.Property<DateTime>("ScheduledFor")
                         .HasColumnType("timestamp with time zone");
 
@@ -149,50 +167,11 @@ namespace Barberos.Infrastructure.Migrations
                     b.Property<int>("Type")
                         .HasColumnType("integer");
 
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.HasIndex("Status", "ScheduledFor");
 
                     b.ToTable("Notifications");
-                });
-
-            modelBuilder.Entity("Barberos.Domain.Entities.OtpCode", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("CodeHash")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Phone")
-                        .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
-
-                    b.Property<bool>("Used")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Phone", "ExpiresAt");
-
-                    b.ToTable("OtpCodes");
                 });
 
             modelBuilder.Entity("Barberos.Domain.Entities.RefreshToken", b =>
@@ -235,9 +214,6 @@ namespace Barberos.Infrastructure.Migrations
                     b.Property<Guid>("BookingId")
                         .HasColumnType("uuid");
 
-                    b.Property<Guid>("ClientId")
-                        .HasColumnType("uuid");
-
                     b.Property<string>("Comment")
                         .HasColumnType("text");
 
@@ -257,8 +233,6 @@ namespace Barberos.Infrastructure.Migrations
 
                     b.HasIndex("BookingId")
                         .IsUnique();
-
-                    b.HasIndex("ClientId");
 
                     b.HasIndex("MasterId");
 
@@ -361,21 +335,28 @@ namespace Barberos.Infrastructure.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
                     b.Property<string>("Name")
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
-                    b.Property<string>("Phone")
+                    b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)");
+                        .HasColumnType("text");
 
                     b.Property<int>("Role")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
 
-                    b.HasIndex("Phone")
+                    b.HasIndex("Email")
                         .IsUnique();
 
                     b.ToTable("Users");
@@ -383,12 +364,6 @@ namespace Barberos.Infrastructure.Migrations
 
             modelBuilder.Entity("Barberos.Domain.Entities.Booking", b =>
                 {
-                    b.HasOne("Barberos.Domain.Entities.User", "Client")
-                        .WithMany("Bookings")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Barberos.Domain.Entities.Master", "Master")
                         .WithMany("Bookings")
                         .HasForeignKey("MasterId")
@@ -400,8 +375,6 @@ namespace Barberos.Infrastructure.Migrations
                         .HasForeignKey("ServiceId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
-
-                    b.Navigation("Client");
 
                     b.Navigation("Master");
 
@@ -437,17 +410,6 @@ namespace Barberos.Infrastructure.Migrations
                     b.Navigation("Service");
                 });
 
-            modelBuilder.Entity("Barberos.Domain.Entities.Notification", b =>
-                {
-                    b.HasOne("Barberos.Domain.Entities.User", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("Barberos.Domain.Entities.RefreshToken", b =>
                 {
                     b.HasOne("Barberos.Domain.Entities.User", "User")
@@ -467,12 +429,6 @@ namespace Barberos.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("Barberos.Domain.Entities.User", "Client")
-                        .WithMany("Reviews")
-                        .HasForeignKey("ClientId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("Barberos.Domain.Entities.Master", "Master")
                         .WithMany("Reviews")
                         .HasForeignKey("MasterId")
@@ -480,8 +436,6 @@ namespace Barberos.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("Booking");
-
-                    b.Navigation("Client");
 
                     b.Navigation("Master");
                 });
@@ -531,13 +485,6 @@ namespace Barberos.Infrastructure.Migrations
                     b.Navigation("Bookings");
 
                     b.Navigation("MasterServices");
-                });
-
-            modelBuilder.Entity("Barberos.Domain.Entities.User", b =>
-                {
-                    b.Navigation("Bookings");
-
-                    b.Navigation("Reviews");
                 });
 #pragma warning restore 612, 618
         }

@@ -7,7 +7,6 @@ namespace Barberos.Application.Abstractions;
 public interface IAppDbContext
 {
     DbSet<User> Users { get; }
-    DbSet<OtpCode> OtpCodes { get; }
     DbSet<RefreshToken> RefreshTokens { get; }
     DbSet<Service> Services { get; }
     DbSet<Master> Masters { get; }

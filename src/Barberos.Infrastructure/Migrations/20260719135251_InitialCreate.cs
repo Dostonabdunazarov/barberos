@@ -12,20 +12,23 @@ namespace Barberos.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
-                name: "OtpCodes",
+                name: "Notifications",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
-                    CodeHash = table.Column<string>(type: "text", nullable: false),
-                    ExpiresAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    Recipient = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    Type = table.Column<int>(type: "integer", nullable: false),
+                    Channel = table.Column<int>(type: "integer", nullable: false),
+                    Payload = table.Column<string>(type: "text", nullable: false),
+                    Status = table.Column<int>(type: "integer", nullable: false),
+                    ScheduledFor = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     Attempts = table.Column<int>(type: "integer", nullable: false),
-                    Used = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_OtpCodes", x => x.Id);
+                    table.PrimaryKey("PK_Notifications", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -50,9 +53,11 @@ namespace Barberos.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Phone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
+                    PasswordHash = table.Column<string>(type: "text", nullable: false),
                     Name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: true),
                     Role = table.Column<int>(type: "integer", nullable: false),
+                    IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -84,32 +89,6 @@ namespace Barberos.Infrastructure.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    Channel = table.Column<int>(type: "integer", nullable: false),
-                    Payload = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    ScheduledFor = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    Attempts = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Notifications_Users_UserId",
-                        column: x => x.UserId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "RefreshTokens",
                 columns: table => new
                 {
@@ -136,7 +115,9 @@ namespace Barberos.Infrastructure.Migrations
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    ClientId = table.Column<Guid>(type: "uuid", nullable: false),
+                    GuestName = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
+                    GuestPhone = table.Column<string>(type: "character varying(20)", maxLength: 20, nullable: false),
+                    ManageToken = table.Column<Guid>(type: "uuid", nullable: false),
                     MasterId = table.Column<Guid>(type: "uuid", nullable: false),
                     ServiceId = table.Column<Guid>(type: "uuid", nullable: false),
                     StartAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
@@ -157,12 +138,6 @@ namespace Barberos.Infrastructure.Migrations
                         name: "FK_Bookings_Services_ServiceId",
                         column: x => x.ServiceId,
                         principalTable: "Services",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Bookings_Users_ClientId",
-                        column: x => x.ClientId,
-                        principalTable: "Users",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
@@ -243,7 +218,6 @@ namespace Barberos.Infrastructure.Migrations
                 {
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     BookingId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ClientId = table.Column<Guid>(type: "uuid", nullable: false),
                     MasterId = table.Column<Guid>(type: "uuid", nullable: false),
                     Rating = table.Column<int>(type: "integer", nullable: false),
                     Comment = table.Column<string>(type: "text", nullable: true),
@@ -265,18 +239,18 @@ namespace Barberos.Infrastructure.Migrations
                         principalTable: "Masters",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                    table.ForeignKey(
-                        name: "FK_Reviews_Users_ClientId",
-                        column: x => x.ClientId,
-                        principalTable: "Users",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
                 });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Bookings_ClientId",
+                name: "IX_Bookings_GuestPhone",
                 table: "Bookings",
-                column: "ClientId");
+                column: "GuestPhone");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Bookings_ManageToken",
+                table: "Bookings",
+                column: "ManageToken",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Bookings_MasterId_StartAt",
@@ -310,16 +284,6 @@ namespace Barberos.Infrastructure.Migrations
                 columns: new[] { "Status", "ScheduledFor" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_UserId",
-                table: "Notifications",
-                column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_OtpCodes_Phone_ExpiresAt",
-                table: "OtpCodes",
-                columns: new[] { "Phone", "ExpiresAt" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",
                 table: "RefreshTokens",
                 column: "TokenHash");
@@ -334,11 +298,6 @@ namespace Barberos.Infrastructure.Migrations
                 table: "Reviews",
                 column: "BookingId",
                 unique: true);
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Reviews_ClientId",
-                table: "Reviews",
-                column: "ClientId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Reviews_MasterId",
@@ -356,9 +315,9 @@ namespace Barberos.Infrastructure.Migrations
                 columns: new[] { "MasterId", "StartAt", "EndAt" });
 
             migrationBuilder.CreateIndex(
-                name: "IX_Users_Phone",
+                name: "IX_Users_Email",
                 table: "Users",
-                column: "Phone",
+                column: "Email",
                 unique: true);
         }
 
@@ -370,9 +329,6 @@ namespace Barberos.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Notifications");
-
-            migrationBuilder.DropTable(
-                name: "OtpCodes");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");

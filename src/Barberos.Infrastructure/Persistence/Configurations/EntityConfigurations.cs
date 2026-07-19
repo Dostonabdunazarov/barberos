@@ -9,20 +9,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
     public void Configure(EntityTypeBuilder<User> b)
     {
         b.HasKey(x => x.Id);
-        b.Property(x => x.Phone).IsRequired().HasMaxLength(20);
-        b.HasIndex(x => x.Phone).IsUnique();
+        b.Property(x => x.Email).IsRequired().HasMaxLength(256);
+        b.HasIndex(x => x.Email).IsUnique();
+        b.Property(x => x.PasswordHash).IsRequired();
         b.Property(x => x.Name).HasMaxLength(120);
-    }
-}
-
-public class OtpCodeConfiguration : IEntityTypeConfiguration<OtpCode>
-{
-    public void Configure(EntityTypeBuilder<OtpCode> b)
-    {
-        b.HasKey(x => x.Id);
-        b.Property(x => x.Phone).IsRequired().HasMaxLength(20);
-        b.Property(x => x.CodeHash).IsRequired();
-        b.HasIndex(x => new { x.Phone, x.ExpiresAt });
     }
 }
 
@@ -95,8 +85,11 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
     public void Configure(EntityTypeBuilder<Booking> b)
     {
         b.HasKey(x => x.Id);
-        b.HasOne(x => x.Client).WithMany(u => u.Bookings).HasForeignKey(x => x.ClientId)
-            .OnDelete(DeleteBehavior.Restrict);
+        b.Property(x => x.GuestName).IsRequired().HasMaxLength(120);
+        b.Property(x => x.GuestPhone).IsRequired().HasMaxLength(20);
+        b.HasIndex(x => x.ManageToken).IsUnique();
+        b.HasIndex(x => x.GuestPhone); // поиск истории клиента по телефону
+
         b.HasOne(x => x.Master).WithMany(m => m.Bookings).HasForeignKey(x => x.MasterId)
             .OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Service).WithMany(s => s.Bookings).HasForeignKey(x => x.ServiceId)
@@ -119,8 +112,6 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
         b.HasKey(x => x.Id);
         b.HasIndex(x => x.BookingId).IsUnique();
         b.HasOne(x => x.Booking).WithOne(bk => bk.Review).HasForeignKey<Review>(x => x.BookingId);
-        b.HasOne(x => x.Client).WithMany(u => u.Reviews).HasForeignKey(x => x.ClientId)
-            .OnDelete(DeleteBehavior.Restrict);
         b.HasOne(x => x.Master).WithMany(m => m.Reviews).HasForeignKey(x => x.MasterId)
             .OnDelete(DeleteBehavior.Restrict);
     }
@@ -131,7 +122,8 @@ public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
     public void Configure(EntityTypeBuilder<Notification> b)
     {
         b.HasKey(x => x.Id);
-        b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId);
+        b.Property(x => x.Recipient).IsRequired().HasMaxLength(256);
+        b.Property(x => x.Payload).IsRequired();
         b.HasIndex(x => new { x.Status, x.ScheduledFor });
     }
 }

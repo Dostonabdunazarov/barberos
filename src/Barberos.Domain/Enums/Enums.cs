@@ -1,9 +1,8 @@
 namespace Barberos.Domain.Enums;
 
-/// <summary>Роль пользователя в системе.</summary>
+/// <summary>Роль сотрудника. Клиенты не являются пользователями системы.</summary>
 public enum UserRole
 {
-    Client = 0,
     Master = 1,
     Admin = 2
 }

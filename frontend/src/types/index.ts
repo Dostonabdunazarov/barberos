@@ -1,6 +1,7 @@
 // Доменные типы, отражающие модель backend.
+// Клиенты НЕ являются пользователями — бронь гостевая (имя + телефон).
 
-export type UserRole = "Client" | "Master" | "Admin";
+export type UserRole = "Master" | "Admin";
 
 export type BookingStatus =
   | "Pending"
@@ -9,9 +10,10 @@ export type BookingStatus =
   | "Cancelled"
   | "NoShow";
 
+/** Сотрудник барбершопа (мастер/админ). Вход по email + паролю. */
 export interface User {
   id: string;
-  phone: string;
+  email: string;
   name?: string;
   role: UserRole;
 }
@@ -40,6 +42,9 @@ export interface TimeSlot {
 
 export interface Booking {
   id: string;
+  guestName: string;
+  guestPhone: string;
+  manageToken?: string; // возвращается только при создании
   masterId: string;
   serviceId: string;
   startAt: string;

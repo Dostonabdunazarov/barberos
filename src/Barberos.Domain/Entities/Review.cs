@@ -2,13 +2,14 @@ using Barberos.Domain.Common;
 
 namespace Barberos.Domain.Entities;
 
-/// <summary>Отзыв клиента по завершённой брони. Один отзыв на бронь.</summary>
+/// <summary>
+/// Отзыв клиента по завершённой брони. Один отзыв на бронь.
+/// Клиент не является пользователем — отзыв привязан к брони (и через неё к мастеру).
+/// </summary>
 public class Review : BaseEntity
 {
     public Guid BookingId { get; set; }
     public Booking Booking { get; set; } = null!;
-    public Guid ClientId { get; set; }
-    public User Client { get; set; } = null!;
     public Guid MasterId { get; set; }
     public Master Master { get; set; } = null!;
 

@@ -8,7 +8,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     : DbContext(options), IAppDbContext
 {
     public DbSet<User> Users => Set<User>();
-    public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
     public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
     public DbSet<Service> Services => Set<Service>();
     public DbSet<Master> Masters => Set<Master>();
