@@ -1,4 +1,6 @@
+using Barberos.Api.Auth;
 using Barberos.Infrastructure;
+using Barberos.Infrastructure.Auth;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -9,7 +11,8 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
     .Enrich.FromLogContext()
     .WriteTo.Console());
 
-// OpenAPI / Swagger
+// Controllers + OpenAPI / Swagger
+builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 // CORS для React SPA
@@ -21,8 +24,15 @@ builder.Services.AddCors(options =>
         .AllowAnyMethod()
         .AllowCredentials()));
 
-// Инфраструктура (EF Core + Postgres + сервисы)
+// Инфраструктура (EF Core + Postgres + auth-сервисы)
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Аутентификация/авторизация (JWT bearer + policies)
+builder.Services.AddApiAuth();
+
+// Обработка доменных исключений (AuthException → 401)
+builder.Services.AddExceptionHandler<AuthExceptionHandler>();
+builder.Services.AddProblemDetails();
 
 // Health checks
 builder.Services.AddHealthChecks()
@@ -30,17 +40,26 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
+// Бутстрап первого админа (если админов нет и заданы Bootstrap:Admin:*).
+using (var scope = app.Services.CreateScope())
+{
+    var bootstrapper = scope.ServiceProvider.GetRequiredService<AdminBootstrapper>();
+    await bootstrapper.EnsureAdminAsync();
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
 }
 
+app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseCors(CorsPolicy);
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapControllers();
 app.MapHealthChecks("/health");
 app.MapGet("/", () => "Barberos API is running");
 

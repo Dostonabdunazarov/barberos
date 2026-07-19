@@ -1,4 +1,6 @@
 using Barberos.Application.Abstractions;
+using Barberos.Application.Auth;
+using Barberos.Infrastructure.Auth;
 using Barberos.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,6 +20,18 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+
+        // Auth
+        services.AddOptions<JwtOptions>()
+            .Bind(configuration.GetSection(JwtOptions.SectionName))
+            .Validate(o => !string.IsNullOrWhiteSpace(o.Key) && o.Key.Length >= 32,
+                "Jwt:Key должен быть задан и содержать не менее 32 символов.")
+            .ValidateOnStart();
+
+        services.AddSingleton<IPasswordHasher, PasswordHasher>();
+        services.AddSingleton<IJwtTokenService, JwtTokenService>();
+        services.AddScoped<IAuthService, AuthService>();
+        services.AddScoped<AdminBootstrapper>();
 
         return services;
     }

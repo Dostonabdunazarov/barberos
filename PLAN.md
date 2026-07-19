@@ -278,9 +278,9 @@ PATCH  /api/reviews/{id}/moderate   (admin)
 - [x] Домен + EF Core (DbContext + конфигурации), миграция сгенерирована
   - [x] применить миграцию к БД (`dotnet ef database update`) — 10 таблиц, применено
   - [x] добавить EXCLUDE-constraint от двойного бронирования вручную в миграцию — `CK_Bookings_no_overlap` + расширение `btree_gist`
-- [ ] Аутентификация персонала: email + пароль (хеш пароля, JWT, refresh) _(логика — нет)_
-- [ ] Роли и авторизация Master/Admin _(enum `UserRole` есть, policy/middleware — нет)_
-- [ ] Бутстрап первого админа (сид-миграция / env при первом старте) — иначе некому администрировать
+- [x] Аутентификация персонала: email + пароль (PBKDF2-хеш, JWT access ~15м, refresh-токен в httpOnly cookie с ротацией) — `AuthService`, `AuthController`
+- [x] Роли и авторизация Master/Admin — policies `Admin`/`Staff` (JWT bearer + `AddApiAuth`)
+- [x] Бутстрап первого админа при старте (`AdminBootstrapper`, из `Bootstrap:Admin:*` / env)
 
 ### Этап 2 — Каталог и расписание (1 нед)
 - [ ] CRUD услуг и мастеров (админ)
