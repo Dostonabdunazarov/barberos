@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Barberos.Api/Barberos.Api.csproj" />
+    <Project Path="src/Barberos.Application/Barberos.Application.csproj" />
+    <Project Path="src/Barberos.Domain/Barberos.Domain.csproj" />
+    <Project Path="src/Barberos.Infrastructure/Barberos.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Barberos.IntegrationTests/Barberos.IntegrationTests.csproj" />
+    <Project Path="tests/Barberos.UnitTests/Barberos.UnitTests.csproj" />
+  </Folder>
+</Solution>

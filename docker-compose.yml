@@ -1,0 +1,44 @@
+services:
+  postgres:
+    image: postgres:17
+    container_name: barberos-postgres
+    environment:
+      POSTGRES_DB: barberos
+      POSTGRES_USER: barberos
+      POSTGRES_PASSWORD: barberos
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barberos"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Barberos.Api/Dockerfile
+    container_name: barberos-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=barberos;Username=barberos;Password=barberos"
+    ports:
+      - "5080:8080"
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: barberos-frontend
+    depends_on:
+      - api
+    ports:
+      - "5173:80"
+
+volumes:
+  pgdata:

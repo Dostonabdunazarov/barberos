@@ -1,0 +1,23 @@
+# .NET
+bin/
+obj/
+*.user
+appsettings.*.local.json
+
+# Rider / VS
+.idea/
+.vs/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+
+# Env / secrets
+.env
+.env.local
+*.pfx
+
+# OS
+.DS_Store
+Thumbs.db
