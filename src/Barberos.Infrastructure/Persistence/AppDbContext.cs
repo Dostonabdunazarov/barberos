@@ -16,7 +16,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options)
     public DbSet<TimeOff> TimeOffs => Set<TimeOff>();
     public DbSet<Booking> Bookings => Set<Booking>();
     public DbSet<Review> Reviews => Set<Review>();
-    public DbSet<Notification> Notifications => Set<Notification>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

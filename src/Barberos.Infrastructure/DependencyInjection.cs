@@ -1,6 +1,5 @@
 using Barberos.Application.Abstractions;
 using Barberos.Infrastructure.Persistence;
-using Barberos.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +18,6 @@ public static class DependencyInjection
             options.UseNpgsql(connectionString));
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
-        services.AddScoped<ISmsSender, ConsoleSmsSender>();
 
         return services;
     }

@@ -131,49 +131,6 @@ namespace Barberos.Infrastructure.Migrations
                     b.ToTable("MasterServices");
                 });
 
-            modelBuilder.Entity("Barberos.Domain.Entities.Notification", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Attempts")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Channel")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Payload")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Recipient")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("character varying(256)");
-
-                    b.Property<DateTime>("ScheduledFor")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<DateTime?>("SentAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("Status", "ScheduledFor");
-
-                    b.ToTable("Notifications");
-                });
-
             modelBuilder.Entity("Barberos.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -273,6 +230,9 @@ namespace Barberos.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("BufferMinutes")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -291,7 +251,7 @@ namespace Barberos.Infrastructure.Migrations
                         .HasColumnType("character varying(120)");
 
                     b.Property<decimal>("Price")
-                        .HasColumnType("numeric(10,2)");
+                        .HasColumnType("numeric(12,2)");
 
                     b.HasKey("Id");
 

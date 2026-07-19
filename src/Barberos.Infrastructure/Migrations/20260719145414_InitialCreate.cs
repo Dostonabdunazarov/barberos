@@ -11,25 +11,8 @@ namespace Barberos.Infrastructure.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.CreateTable(
-                name: "Notifications",
-                columns: table => new
-                {
-                    Id = table.Column<Guid>(type: "uuid", nullable: false),
-                    Recipient = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    Channel = table.Column<int>(type: "integer", nullable: false),
-                    Payload = table.Column<string>(type: "text", nullable: false),
-                    Status = table.Column<int>(type: "integer", nullable: false),
-                    ScheduledFor = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    SentAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
-                    Attempts = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Notifications", x => x.Id);
-                });
+            // Требуется для EXCLUDE-constraint ниже: gist-индекс по uuid (оператор =).
+            migrationBuilder.Sql("CREATE EXTENSION IF NOT EXISTS btree_gist;");
 
             migrationBuilder.CreateTable(
                 name: "Services",
@@ -39,7 +22,8 @@ namespace Barberos.Infrastructure.Migrations
                     Name = table.Column<string>(type: "character varying(120)", maxLength: 120, nullable: false),
                     Description = table.Column<string>(type: "text", nullable: true),
                     DurationMinutes = table.Column<int>(type: "integer", nullable: false),
-                    Price = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
+                    BufferMinutes = table.Column<int>(type: "integer", nullable: false),
+                    Price = table.Column<decimal>(type: "numeric(12,2)", nullable: false),
                     IsActive = table.Column<bool>(type: "boolean", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
@@ -279,11 +263,6 @@ namespace Barberos.Infrastructure.Migrations
                 column: "ServiceId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Notifications_Status_ScheduledFor",
-                table: "Notifications",
-                columns: new[] { "Status", "ScheduledFor" });
-
-            migrationBuilder.CreateIndex(
                 name: "IX_RefreshTokens_TokenHash",
                 table: "RefreshTokens",
                 column: "TokenHash");
@@ -319,6 +298,17 @@ namespace Barberos.Infrastructure.Migrations
                 table: "Users",
                 column: "Email",
                 unique: true);
+
+            // Защита от двойного бронирования на уровне БД: у одного мастера не может
+            // быть двух пересекающихся по времени броней в статусах, занимающих слот
+            // (1 = Confirmed, 2 = Completed). Cancelled/NoShow слот освобождают.
+            migrationBuilder.Sql(@"
+                ALTER TABLE ""Bookings"" ADD CONSTRAINT ""CK_Bookings_no_overlap""
+                EXCLUDE USING gist (
+                    ""MasterId"" WITH =,
+                    tstzrange(""StartAt"", ""EndAt"") WITH &&
+                )
+                WHERE (""Status"" IN (1, 2));");
         }
 
         /// <inheritdoc />
@@ -326,9 +316,6 @@ namespace Barberos.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "MasterServices");
-
-            migrationBuilder.DropTable(
-                name: "Notifications");
 
             migrationBuilder.DropTable(
                 name: "RefreshTokens");

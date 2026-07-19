@@ -15,7 +15,6 @@ public interface IAppDbContext
     DbSet<TimeOff> TimeOffs { get; }
     DbSet<Booking> Bookings { get; }
     DbSet<Review> Reviews { get; }
-    DbSet<Notification> Notifications { get; }
 
     Task<int> SaveChangesAsync(CancellationToken ct = default);
 }

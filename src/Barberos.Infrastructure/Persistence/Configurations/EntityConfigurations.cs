@@ -34,7 +34,7 @@ public class ServiceConfiguration : IEntityTypeConfiguration<Service>
     {
         b.HasKey(x => x.Id);
         b.Property(x => x.Name).IsRequired().HasMaxLength(120);
-        b.Property(x => x.Price).HasColumnType("numeric(10,2)");
+        b.Property(x => x.Price).HasColumnType("numeric(12,2)");
     }
 }
 
@@ -97,11 +97,10 @@ public class BookingConfiguration : IEntityTypeConfiguration<Booking>
 
         // Индекс для быстрого поиска пересечений по мастеру и времени.
         b.HasIndex(x => new { x.MasterId, x.StartAt });
-        // ПРИМЕЧАНИЕ: защиту от двойного бронирования добавить как EXCLUDE-constraint
-        // в отдельной миграции (raw SQL):
+        // Защита от двойного бронирования — EXCLUDE-constraint (raw SQL в миграции):
         //   ALTER TABLE "Bookings" ADD CONSTRAINT no_overlap
         //   EXCLUDE USING gist ("MasterId" WITH =, tstzrange("StartAt","EndAt") WITH &&)
-        //   WHERE ("Status" IN (0,1,2));  -- pending/confirmed/completed
+        //   WHERE ("Status" IN (1,2));  -- confirmed/completed занимают слот
     }
 }
 
@@ -114,16 +113,5 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
         b.HasOne(x => x.Booking).WithOne(bk => bk.Review).HasForeignKey<Review>(x => x.BookingId);
         b.HasOne(x => x.Master).WithMany(m => m.Reviews).HasForeignKey(x => x.MasterId)
             .OnDelete(DeleteBehavior.Restrict);
-    }
-}
-
-public class NotificationConfiguration : IEntityTypeConfiguration<Notification>
-{
-    public void Configure(EntityTypeBuilder<Notification> b)
-    {
-        b.HasKey(x => x.Id);
-        b.Property(x => x.Recipient).IsRequired().HasMaxLength(256);
-        b.Property(x => x.Payload).IsRequired();
-        b.HasIndex(x => new { x.Status, x.ScheduledFor });
     }
 }
