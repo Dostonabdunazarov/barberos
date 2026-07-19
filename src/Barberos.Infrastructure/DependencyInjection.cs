@@ -1,15 +1,19 @@
 using Barberos.Application.Abstractions;
+using Barberos.Application.Analytics;
 using Barberos.Application.Auth;
 using Barberos.Application.Availability;
 using Barberos.Application.Bookings;
 using Barberos.Application.Common;
 using Barberos.Application.Masters;
+using Barberos.Application.Reviews;
 using Barberos.Application.Scheduling;
 using Barberos.Application.Services;
+using Barberos.Infrastructure.Analytics;
 using Barberos.Infrastructure.Auth;
 using Barberos.Infrastructure.Bookings;
 using Barberos.Infrastructure.Catalog;
 using Barberos.Infrastructure.Persistence;
+using Barberos.Infrastructure.Reviews;
 using Barberos.Infrastructure.Scheduling;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -35,6 +39,8 @@ public static class DependencyInjection
             .Bind(configuration.GetSection(JwtOptions.SectionName))
             .Validate(o => !string.IsNullOrWhiteSpace(o.Key) && o.Key.Length >= 32,
                 "Jwt:Key должен быть задан и содержать не менее 32 символов.")
+            .Validate(o => !o.Key.StartsWith("CHANGE_ME", StringComparison.Ordinal),
+                "Jwt:Key всё ещё содержит placeholder из appsettings.json. Задайте секрет через переменную окружения Jwt__Key.")
             .ValidateOnStart();
 
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
@@ -58,6 +64,10 @@ public static class DependencyInjection
 
         // Бронирование (Этап 3)
         services.AddScoped<IBookingService, BookingService>();
+
+        // Отзывы и аналитика (Этап 4)
+        services.AddScoped<IReviewService, ReviewService>();
+        services.AddScoped<IAnalyticsService, AnalyticsService>();
 
         return services;
     }

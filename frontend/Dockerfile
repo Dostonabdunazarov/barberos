@@ -6,7 +6,8 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM nginx:alpine AS runtime
+FROM nginx:1.27-alpine AS runtime
+# Статика и SPA-конфиг nginx. Проксирование /api/ на backend — в nginx.conf.
 COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 80

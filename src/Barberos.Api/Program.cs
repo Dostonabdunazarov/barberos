@@ -1,10 +1,13 @@
 using Barberos.Api.Auth;
+using Barberos.Api.Middleware;
 using Barberos.Api.RateLimiting;
 using Barberos.Api.Validation;
 using Barberos.Application.Services;
 using Barberos.Infrastructure;
 using Barberos.Infrastructure.Auth;
 using FluentValidation;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -23,14 +26,35 @@ builder.Services.AddOpenApi();
 // FluentValidation: регистрируем валидаторы из Application-сборки
 builder.Services.AddValidatorsFromAssemblyContaining<CreateServiceRequestValidator>();
 
-// CORS для React SPA
+// CORS для React SPA.
+// В Production origins ОБЯЗАТЕЛЬНЫ (fail-closed): при пустом Cors:Origins стартап падает,
+// чтобы не задеплоить неверную политику. В dev — дефолт на локальный Vite.
 const string CorsPolicy = "spa";
+var corsOrigins = builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? [];
+if (corsOrigins.Length == 0)
+{
+    if (builder.Environment.IsProduction())
+        throw new InvalidOperationException(
+            "Cors:Origins не задан. В Production укажите реальные origin(ы) SPA через Cors__Origins__0 и т.д.");
+    corsOrigins = ["http://localhost:5173"];
+}
 builder.Services.AddCors(options =>
     options.AddPolicy(CorsPolicy, policy => policy
-        .WithOrigins(builder.Configuration.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173"])
+        .WithOrigins(corsOrigins)
         .AllowAnyHeader()
         .AllowAnyMethod()
         .AllowCredentials()));
+
+// За обратным прокси (nginx) читаем реальный IP клиента и схему из X-Forwarded-*,
+// иначе rate limiting по IP и HTTPS-редирект работают неверно.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    // Прокси в нашей сети — доверяем всем (в контейнерной сети адрес прокси не фиксирован).
+    // При деплое можно сузить до KnownProxies/KnownNetworks конкретного nginx.
+    options.KnownIPNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // Инфраструктура (EF Core + Postgres + auth-сервисы)
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -53,9 +77,24 @@ builder.Services.AddHealthChecks()
 
 var app = builder.Build();
 
-// Бутстрап первого админа (если админов нет и заданы Bootstrap:Admin:*).
+// Применение миграций при старте (можно отключить через Database:AutoMigrate=false,
+// если миграции накатываются отдельным шагом деплоя). Должно идти ДО бутстрапа админа,
+// т.к. бутстрап читает таблицу Users.
 using (var scope = app.Services.CreateScope())
 {
+    // Форсируем валидацию критичных опций (Jwt:Key и т.д.) ДО работы с БД:
+    // ValidateOnStart иначе срабатывает только на app.Run(), уже после миграций/бутстрапа.
+    _ = scope.ServiceProvider
+        .GetRequiredService<Microsoft.Extensions.Options.IOptions<Barberos.Infrastructure.Auth.JwtOptions>>()
+        .Value;
+
+    if (app.Configuration.GetValue("Database:AutoMigrate", true))
+    {
+        var db = scope.ServiceProvider.GetRequiredService<Barberos.Infrastructure.Persistence.AppDbContext>();
+        await db.Database.MigrateAsync();
+    }
+
+    // Бутстрап первого админа (если админов нет и заданы Bootstrap:Admin:*).
     var bootstrapper = scope.ServiceProvider.GetRequiredService<AdminBootstrapper>();
     await bootstrapper.EnsureAdminAsync();
 }
@@ -65,6 +104,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
 }
 
+// Первым — восстановление реального клиента/схемы из заголовков прокси.
+app.UseForwardedHeaders();
+
+// HSTS только вне dev (иначе ломает localhost по http).
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
+
+app.UseSecurityHeaders();
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();

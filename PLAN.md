@@ -270,7 +270,7 @@ PATCH  /api/reviews/{id}/moderate   (admin)
 - [x] Инициализация репозитория, структура solution (.NET 10): Domain / Application / Infrastructure / Api + tests
 - [x] Настройка React + Vite проекта (роутер, react-query, zustand, axios, tailwind, заглушки страниц)
 - [x] docker-compose (Postgres + API + frontend) + Dockerfile'ы + nginx.conf
-- [ ] CI: build _(GitHub Actions — не настроен)_
+- [x] CI: build/test/security (GitHub Actions) — `.github/workflows/ci.yml`: restore/build (`-warnaserror`)/test, gate уязвимых пакетов (`--vulnerable`), проверка синхронизации миграций, сборка Docker-образов (см. Этап 5)
 - [ ] Дизайн-система: тёмная тема, фон-фото + overlay, glass-стили (утилиты/компоненты), акцентный цвет, шрифты, shadcn/ui + Framer Motion
 - [ ] i18n: react-i18next, словари ru/uz (latn), RU по умолчанию, переключатель языка, сохранение выбора
 
@@ -298,13 +298,23 @@ PATCH  /api/reviews/{id}/moderate   (admin)
   - Покрыто unit-тестами (`BookingServiceTests`, 17 сценариев). Frontend флоу бронирования — отдельно (Этап 8/UI).
 - [x] Rate limiting (§3, §10) — `RateLimitSetup`: fixed-window по IP на `POST /api/auth/login` (5/мин) и `POST /api/bookings` (10/мин); 429 в формате ProblemDetails + `Retry-After`; настройки в секции `RateLimiting`
 
-### Этап 4 — Отзывы и админка (1 нед)
-- [ ] Отзывы и рейтинги, модерация
-- [ ] Админ-аналитика (базовая)
+### Этап 4 — Отзывы и админка (1 нед) — ✅ выполнено (backend)
+- [x] Отзывы и рейтинги, модерация — `ReviewService`; создание по `manage_token` **завершённой** брони (`POST /api/reviews/manage/{token}`), **премодерация** (отзыв создаётся скрытым, `is_published=false`); публичная лента мастера с агрегированным рейтингом (`GET /api/masters/{id}/reviews`, только опубликованные); список на модерацию + решение admin (`GET /api/reviews`, `PATCH /api/reviews/{id}/moderate`). Один отзыв на бронь (unique-индекс `BookingId`)
+- [x] Админ-аналитика (базовая) — `AnalyticsService`, `GET /api/analytics/overview?from=&to=` (admin): брони по статусам (все), загрузка мастеров (число броней + занятые минуты по confirmed/completed), популярные услуги. Границы периода по `StartAt` (UTC)
+  - Покрыто unit-тестами (`ReviewServiceTests` 12 сценариев, `AnalyticsServiceTests` 5). Frontend (лента отзывов, форма отзыва, дашборд аналитики) — отдельно (UI-этап).
 
-### Этап 5 — Полировка и релиз (0.5–1 нед)
-- [ ] Аудит безопасности
-- [ ] Деплой на staging → prod
+### Этап 5 — Полировка и релиз (0.5–1 нед) — ✅ выполнено (аудит + инфра-обвязка)
+- [x] Аудит безопасности — отчёт `docs/SECURITY-AUDIT.md`. Исправлено:
+  - Уязвимость `Microsoft.OpenApi 2.0.0` (GHSA-v5pm-xwqc-g5wc) — прямой pin `2.7.5`; в CI gate `--vulnerable`
+  - Зафиксированы все версии NuGet-пакетов (устранён конфликт версий EF Core, воспроизводимый билд)
+  - JWT: отклонение placeholder-ключа `CHANGE_ME...` на старте; CORS fail-closed в Production
+  - HSTS + security-заголовки (`SecurityHeadersMiddleware`: CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy)
+  - `ForwardedHeaders` (реальный IP клиента за прокси для rate limiting/HTTPS)
+  - Авто-миграция схемы при старте перед бутстрапом админа (`Database:AutoMigrate`)
+- [x] Инфраструктура деплоя (Docker Compose на VPS) — `docker-compose.prod.yml` (postgres+api+frontend+nginx TLS, только прокси наружу), hardened Dockerfile (non-root `$APP_UID`, кеш-restore), `deploy/nginx/barberos.conf` (TLS-терминация), `.env.example` (все секреты через env), runbook `DEPLOY.md`
+- [ ] Фактический деплой на staging → prod — выполняет владелец инфраструктуры по `DEPLOY.md` (нужны сервер, домен, TLS-сертификаты, секреты)
+
+> Frontend-этапы (дизайн-система, i18n, публичные экраны, кабинеты) из §8 — вне бэкенд-дорожки; отмечены в Этапе 0 как невыполненные.
 
 **Ориентировочно MVP:** ~5–7 недель для одного разработчика full-stack.
 

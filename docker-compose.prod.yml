@@ -1,0 +1,81 @@
+# Продовый стек для одного VPS: postgres + api + frontend + nginx (TLS).
+# Секреты — в файле .env рядом с этим compose (см. .env.example). НЕ коммитить .env.
+#
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# Только proxy публикует порты наружу (80/443). Остальные сервисы — во внутренней сети.
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: barberos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    # Порт наружу НЕ публикуется — доступ только из compose-сети.
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Barberos.Api/Dockerfile
+    container_name: barberos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Секреты и конфиг — из .env (ConnectionStrings__Postgres, Jwt__Key,
+      # Cors__Origins__0, AllowedHosts, Bootstrap__Admin__*, ...).
+    env_file:
+      - .env
+    networks:
+      - backend
+    # Порт наружу НЕ публикуется — доступ через frontend/proxy.
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: barberos-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - backend
+    # Отдаёт SPA и проксирует /api/ на api:8080 (см. frontend/nginx.conf).
+
+  proxy:
+    image: nginx:1.27-alpine
+    container_name: barberos-proxy
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/nginx/barberos.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./deploy/nginx/certs:/etc/nginx/certs:ro
+      - certbot-www:/var/www/certbot
+    networks:
+      - backend
+
+volumes:
+  pgdata:
+  certbot-www:
+
+networks:
+  backend:
+    driver: bridge

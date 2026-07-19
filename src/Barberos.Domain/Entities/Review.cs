@@ -15,5 +15,6 @@ public class Review : BaseEntity
 
     public int Rating { get; set; } // 1..5
     public string? Comment { get; set; }
-    public bool IsPublished { get; set; } = true;
+    /// <summary>Премодерация: отзыв создаётся скрытым, публикуется после одобрения админом.</summary>
+    public bool IsPublished { get; set; } = false;
 }

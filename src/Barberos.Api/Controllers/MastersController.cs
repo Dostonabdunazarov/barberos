@@ -1,6 +1,7 @@
 using Barberos.Api.Auth;
 using Barberos.Application.Common;
 using Barberos.Application.Masters;
+using Barberos.Application.Reviews;
 using Barberos.Application.Scheduling;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -9,12 +10,13 @@ namespace Barberos.Api.Controllers;
 
 /// <summary>
 /// Мастера, их расписание и периоды недоступности.
-/// Чтение профилей/расписания — публично; создание/изменение мастера — admin;
+/// Чтение профилей/расписания/отзывов — публично; создание/изменение мастера — admin;
 /// изменение расписания и time-off — admin или сам мастер (своё).
 /// </summary>
 [ApiController]
 [Route("api/masters")]
-public class MastersController(IMasterCatalog masters, IScheduleService schedule) : ControllerBase
+public class MastersController(
+    IMasterCatalog masters, IScheduleService schedule, IReviewService reviews) : ControllerBase
 {
     [HttpGet]
     [AllowAnonymous]
@@ -29,6 +31,12 @@ public class MastersController(IMasterCatalog masters, IScheduleService schedule
     [AllowAnonymous]
     public async Task<ActionResult<MasterDto>> Get(Guid id, CancellationToken ct)
         => Ok(await masters.GetAsync(id, ct));
+
+    /// <summary>Публичная лента отзывов мастера (только опубликованные) + агрегированный рейтинг.</summary>
+    [HttpGet("{id:guid}/reviews")]
+    [AllowAnonymous]
+    public async Task<ActionResult<MasterReviewsDto>> Reviews(Guid id, CancellationToken ct)
+        => Ok(await reviews.GetMasterReviewsAsync(id, ct));
 
     [HttpPost]
     [Authorize(Policy = AuthSetup.AdminPolicy)]

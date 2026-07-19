@@ -13,7 +13,12 @@ public class Booking : BaseEntity
 {
     public string GuestName { get; set; } = null!;
     public string GuestPhone { get; set; } = null!;
-    /// <summary>Секретный токен для просмотра брони и отзыва клиентом без входа.</summary>
+    /// <summary>
+    /// Секретный токен-возможность (capability) для просмотра брони и отзыва клиентом без входа.
+    /// GUID v4 из <see cref="Guid.NewGuid"/> на .NET Core+ формируется через криптографический
+    /// генератор ОС (122 бита энтропии), поэтому непредсказуем и пригоден как секрет.
+    /// Обращаться как с секретом: передавать только по HTTPS, не логировать в открытом виде.
+    /// </summary>
     public Guid ManageToken { get; set; } = Guid.NewGuid();
 
     public Guid MasterId { get; set; }

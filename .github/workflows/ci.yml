@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend — build, test, security
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+
+      - name: Restore
+        run: dotnet restore Barberos.slnx
+
+      - name: Build (Release, warnings as errors)
+        run: dotnet build Barberos.slnx -c Release --no-restore -warnaserror
+
+      - name: Test
+        run: dotnet test Barberos.slnx -c Release --no-build --verbosity normal
+
+      # Проваливаем сборку при уязвимых пакетах (транзитивных тоже) —
+      # ловит регрессии вроде Microsoft.OpenApi CVE.
+      - name: Check for vulnerable packages
+        run: |
+          dotnet list Barberos.slnx package --vulnerable --include-transitive 2>&1 | tee vuln.log
+          if grep -q "has the following vulnerable packages" vuln.log; then
+            echo "::error::Найдены уязвимые NuGet-пакеты (см. вывод выше)."
+            exit 1
+          fi
+
+      # Проверяем, что модель и миграции не разошлись (нет неучтённых изменений схемы).
+      - name: Verify migrations are up to date
+        run: |
+          dotnet tool install --global dotnet-ef --version 10.0.4
+          export PATH="$PATH:$HOME/.dotnet/tools"
+          dotnet ef migrations has-pending-model-changes \
+            --project src/Barberos.Infrastructure \
+            --startup-project src/Barberos.Api
+
+  frontend:
+    name: Frontend — build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-latest
+    needs: [backend, frontend]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API image
+        run: docker build -f src/Barberos.Api/Dockerfile -t barberos-api:ci .
+
+      - name: Build frontend image
+        run: docker build -t barberos-frontend:ci ./frontend
