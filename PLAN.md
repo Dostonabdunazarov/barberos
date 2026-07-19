@@ -282,17 +282,21 @@ PATCH  /api/reviews/{id}/moderate   (admin)
 - [x] Роли и авторизация Master/Admin — policies `Admin`/`Staff` (JWT bearer + `AddApiAuth`)
 - [x] Бутстрап первого админа при старте (`AdminBootstrapper`, из `Bootstrap:Admin:*` / env)
 
-### Этап 2 — Каталог и расписание (1 нед)
-- [ ] CRUD услуг и мастеров (админ)
-- [ ] Управление расписанием мастеров, time-off
-- [ ] Алгоритм расчёта свободных слотов + endpoint availability
+### Этап 2 — Каталог и расписание (1 нед) — ✅ выполнено
+- [x] CRUD услуг и мастеров (админ) — `ServiceCatalog`/`MasterCatalog`, `ServicesController`/`MastersController`; создание мастера опционально заводит учётку (email+пароль, роль Master)
+- [x] Управление расписанием мастеров, time-off — `ScheduleService`; PUT-замена недельного расписания, time-off в UTC; изменяет admin или сам мастер (своё)
+- [x] Алгоритм расчёта свободных слотов + endpoint availability — `AvailabilityService` (сетка от начала смены, слот = duration+buffer, минус time-off/брони, lead time 120 мин), `GET /api/availability`; покрыт unit-тестами
+  - Решения по открытым вопросам §14: lead time = **120 мин**, шаг сетки = **15 мин** (выравнивание от начала смены). Настройки — секция `Barbershop` (`TimeZone`/`SlotStepMinutes`/`LeadTimeMinutes`).
+  - Инфраструктура валидации/ошибок: FluentValidation + `ValidationFilter`, `AppExceptionHandler` (NotFound→404, Conflict→409, Forbidden→403, Validation→400).
 
-### Этап 3 — Бронирование (1–1.5 нед)
-- [ ] Публичное создание гостевой брони (имя + телефон, транзакция, защита от двойного бронирования, генерация `manage_token`)
-- [ ] Просмотр брони клиентом по `manage_token` (только чтение)
-- [ ] Отмена / перенос брони персоналом (транзакция + повторная проверка слота)
-- [ ] Кабинет мастера (свои записи)
-- [ ] Статусы броней (`confirmed → completed / no_show / cancelled`)
+### Этап 3 — Бронирование (1–1.5 нед) — ✅ выполнено (backend)
+- [x] Публичное создание гостевой брони — `BookingService.CreateAsync`, `POST /api/bookings`; транзакция + прикладная проверка пересечений + EXCLUDE-constraint БД (перехват `PostgresException 23P01` → 409), генерация `ManageToken`, `EndAt = start + duration + buffer`, проверка расписания/time-off/lead time
+- [x] Просмотр брони клиентом по `manage_token` (только чтение) — `GET /api/bookings/manage/{token}`, `BookingManageDto` (без телефона гостя)
+- [x] Отмена / перенос брони персоналом — `PATCH /api/bookings/{id}/cancel` и `/reschedule` (транзакция + повторная проверка слота под тем же EXCLUDE-constraint)
+- [x] Кабинет мастера (свои записи) — `GET /api/bookings` со `StaffContext`: мастер видит только свои брони, админ — все; фильтры `from/to/masterId/status` + пагинация
+- [x] Статусы броней — `PATCH /api/bookings/{id}/status` с проверкой допустимости перехода (`confirmed → completed / no_show / cancelled`; финальные статусы неизменны)
+  - Покрыто unit-тестами (`BookingServiceTests`, 17 сценариев). Frontend флоу бронирования — отдельно (Этап 8/UI).
+- [x] Rate limiting (§3, §10) — `RateLimitSetup`: fixed-window по IP на `POST /api/auth/login` (5/мин) и `POST /api/bookings` (10/мин); 429 в формате ProblemDetails + `Retry-After`; настройки в секции `RateLimiting`
 
 ### Этап 4 — Отзывы и админка (1 нед)
 - [ ] Отзывы и рейтинги, модерация

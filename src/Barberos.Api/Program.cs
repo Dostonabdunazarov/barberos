@@ -1,6 +1,10 @@
 using Barberos.Api.Auth;
+using Barberos.Api.RateLimiting;
+using Barberos.Api.Validation;
+using Barberos.Application.Services;
 using Barberos.Infrastructure;
 using Barberos.Infrastructure.Auth;
+using FluentValidation;
 using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,8 +16,12 @@ builder.Host.UseSerilog((ctx, cfg) => cfg
     .WriteTo.Console());
 
 // Controllers + OpenAPI / Swagger
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+    options.Filters.Add<ValidationFilter>());
 builder.Services.AddOpenApi();
+
+// FluentValidation: регистрируем валидаторы из Application-сборки
+builder.Services.AddValidatorsFromAssemblyContaining<CreateServiceRequestValidator>();
 
 // CORS для React SPA
 const string CorsPolicy = "spa";
@@ -30,8 +38,13 @@ builder.Services.AddInfrastructure(builder.Configuration);
 // Аутентификация/авторизация (JWT bearer + policies)
 builder.Services.AddApiAuth();
 
-// Обработка доменных исключений (AuthException → 401)
+// Rate limiting (перебор пароля на login, спам на публичном создании брони)
+builder.Services.AddApiRateLimiting(builder.Configuration);
+
+// Обработка доменных исключений. Порядок важен: каждый handler возвращает false
+// для «не своих» исключений, передавая их следующему.
 builder.Services.AddExceptionHandler<AuthExceptionHandler>();
+builder.Services.AddExceptionHandler<AppExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 // Health checks
@@ -56,6 +69,7 @@ app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
 app.UseCors(CorsPolicy);
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 

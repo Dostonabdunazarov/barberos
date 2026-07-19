@@ -1,7 +1,9 @@
 using System.Security.Claims;
+using Barberos.Api.RateLimiting;
 using Barberos.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Barberos.Api.Controllers;
 
@@ -17,6 +19,7 @@ public class AuthController(IAuthService auth) : ControllerBase
 
     [HttpPost("login")]
     [AllowAnonymous]
+    [EnableRateLimiting(RateLimitSetup.LoginPolicy)]
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest request, CancellationToken ct)
     {
         var result = await auth.LoginAsync(request, ct);
