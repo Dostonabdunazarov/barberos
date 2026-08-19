@@ -1,12 +1,53 @@
 # Деплой Barberos на VPS (Docker Compose)
 
-Продовый стек: **PostgreSQL + API (.NET 10) + Frontend (nginx со статикой SPA) + nginx-прокси с TLS**.
+Есть два варианта деплоя:
+
+1. **hypex.site (рекомендуется, автоматический через CI)** — стек без своего TLS-прокси;
+   наружу трафик идёт через общий обратный прокси **Caddy** из `corpdev/infra`
+   (TLS терминирует Cloudflare). Домен `barber.hypex.site`.
+   Файлы: [docker-compose.hypex.yml](docker-compose.hypex.yml),
+   [.github/workflows/deploy.yml](.github/workflows/deploy.yml), [.env.example](.env.example).
+   См. раздел [«Деплой на hypex.site»](#деплой-на-hypexsite) ниже.
+
+2. **Автономный VPS (свой TLS)** — стек со своим nginx-прокси и Let's Encrypt на 80/443
+   (описан в этом файле). Подходит для отдельного сервера, где порты 80/443 свободны.
+   Файлы: [docker-compose.prod.yml](docker-compose.prod.yml), [.env.example](.env.example),
+   [deploy/nginx/barberos.conf](deploy/nginx/barberos.conf).
+
+Продовый стек (вариант 2): **PostgreSQL + API (.NET 10) + Frontend (nginx со статикой SPA) + nginx-прокси с TLS**.
 Наружу открыт только прокси (порты 80/443); остальные сервисы — во внутренней сети compose.
 
-Файлы: [docker-compose.prod.yml](docker-compose.prod.yml), [.env.example](.env.example),
-[deploy/nginx/barberos.conf](deploy/nginx/barberos.conf).
+---
+
+## Деплой на hypex.site
+
+Стек: **PostgreSQL + API (.NET 10) + Frontend (nginx: SPA + проксирование /api/, /uploads/)**.
+Своего TLS-прокси нет — вход через общий Caddy (`corpdev/infra`), TLS у Cloudflare.
+
+**Первый раз на сервере (один раз):**
+
+```bash
+# 1) общая сеть Caddy (если ещё нет)
+docker network create proxy || true
+# 2) клон репозитория рядом с corpdev
+cd /root && git clone git@github.com:Dostonabdunazarov/barberos.git
+# 3) заполнить .env реальными секретами (см. .env.example);
+#    Cors__Origins__0=https://barber.hypex.site, AllowedHosts=barber.hypex.site
+cd /root/barberos && cp .env.example .env && nano .env
+# 4) поднять стек и перечитать Caddy
+docker compose -f docker-compose.hypex.yml up -d --build
+cd /root/corpdev/infra && docker compose restart caddy
+```
+
+**DNS:** в Cloudflare создать запись `barber` → IP сервера (оранжевое облачко).
+
+**Дальнейшие деплои — автоматически** при push в `main` (см.
+[.github/workflows/deploy.yml](.github/workflows/deploy.yml)); нужны секреты репозитория
+`SSH_HOST`, `SSH_USER`, `SSH_PRIVATE_KEY`. Проверка: `https://barber.hypex.site`.
 
 ---
+
+## Автономный VPS (свой TLS)
 
 ## 1. Предварительно
 

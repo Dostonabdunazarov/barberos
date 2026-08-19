@@ -1,0 +1,82 @@
+# Продовый стек для сервера hypex.site (общий обратный прокси Caddy).
+#
+# В отличие от docker-compose.prod.yml (автономный стек со своим nginx+TLS),
+# здесь НЕТ своего proxy и НЕ публикуются порты 80/443: наружу трафик идёт через
+# общий Caddy из corpdev/infra (TLS терминирует Cloudflare). Домен barber.hypex.site.
+#
+#   docker compose -f docker-compose.hypex.yml up -d --build
+#
+# Схема (как store_app/play_slot):
+#   Cloudflare → Caddy → barberos-frontend:80 ─┬─ SPA (статика)
+#                                              └─ /api/, /uploads/ → barberos-api:8080
+#   barberos-api ↔ barberos-postgres — во внутренней сети backend.
+#
+# Секреты — в .env рядом с этим compose (см. .env.example). НЕ коммитить .env.
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: barberos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+    # Порт наружу НЕ публикуется — доступ только из compose-сети.
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Barberos.Api/Dockerfile
+    container_name: barberos-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      # Секреты и конфиг — из .env (ConnectionStrings__Postgres, Jwt__Key,
+      # Cors__Origins__0, AllowedHosts, Bootstrap__Admin__*, ...).
+    env_file:
+      - .env
+    volumes:
+      # Загруженные фото работ переживают пересоздание контейнера.
+      - uploads:/app/wwwroot/uploads
+    networks:
+      - backend
+    # Порт наружу НЕ публикуется — доступ через frontend.
+
+  frontend:
+    build:
+      context: ./frontend
+    image: barberos-frontend:latest
+    container_name: barberos-frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    networks:
+      - backend   # чтобы достучаться до api:8080 (проксирование /api/, /uploads/)
+      - proxy     # чтобы общий Caddy достучался до barberos-frontend:80
+    # Отдаёт SPA и проксирует /api/, /uploads/ на api:8080 (см. frontend/nginx.conf).
+    # Порт наружу НЕ публикуется — вход только через Caddy.
+
+volumes:
+  pgdata:
+  uploads:
+
+networks:
+  backend:
+    driver: bridge
+  # Внешняя сеть общего Caddy (создаётся один раз: docker network create proxy).
+  proxy:
+    external: true

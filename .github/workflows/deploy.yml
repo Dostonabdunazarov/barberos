@@ -1,0 +1,41 @@
+name: Deploy
+
+# Деплой barberos на сервер hypex.site через общий обратный прокси Caddy.
+# Требует секреты репозитория: SSH_HOST, SSH_USER, SSH_PRIVATE_KEY (те же, что у corpdev).
+# На сервере в /root/barberos должен лежать заполненный .env (секреты, НЕ в git) —
+# см. .env.example. Первый раз создать сеть: docker network create proxy.
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-barberos
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to server over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 30m
+          script: |
+            set -e
+            cd /root/barberos
+            git fetch origin main
+            git reset --hard origin/main
+            # Общая сеть общего Caddy (idempotent).
+            docker network inspect proxy >/dev/null 2>&1 || docker network create proxy
+            # Прод-стек barberos: postgres + api (сам применяет миграции) + frontend.
+            docker compose -f docker-compose.hypex.yml up -d --build
+            # После пересборки frontend получает новый IP в сети proxy — Caddy надо
+            # ПЕРЕЗАПУСТИТЬ (не reload), иначе белый экран (см. corpdev/infra/README грабля №2).
+            cd /root/corpdev/infra && docker compose restart caddy
+            docker image prune -f
