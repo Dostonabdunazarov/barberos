@@ -15,6 +15,10 @@
     "dashboard": "Kabinet",
     "admin": "Admin"
   },
+  "role": {
+    "master": "Usta",
+    "admin": "Administrator"
+  },
   "lang": {
     "ru": "RU",
     "uz": "UZ",

@@ -101,7 +101,10 @@ export function LogoLockup({ className }: { className?: string }) {
           <stop offset="0.5" stopColor="#e6c584" />
           <stop offset="1" stopColor="#c49a52" />
         </linearGradient>
-        <path id={`${id}-arc`} d="M 20 133 Q 220 92 420 133" fill="none" />
+        {/* Дуга намеренно шире видимой части (уходит за края viewBox): даже при
+            особенностях центровки textPath в WebKit/iOS всё слово остаётся НА пути
+            с запасом, и крайние буквы (в т.ч. финальная G) не обрезаются. */}
+        <path id={`${id}-arc`} d="M -120 168 Q 220 78 560 168" fill="none" />
       </defs>
 
       {/* HAIR STYLE + боковые линии */}

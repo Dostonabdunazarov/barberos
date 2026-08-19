@@ -1,9 +1,9 @@
 import { type ReactNode, useEffect, useRef } from "react";
-import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
+import { Link, NavLink, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useAuthStore, isAdmin } from "../store/authStore";
-import { api } from "../lib/api";
+import { useAuthStore } from "../store/authStore";
 import { LanguageSwitcher } from "./LanguageSwitcher";
+import { UserMenu } from "./UserMenu";
 import { LogoMark } from "./Logo";
 import { cn } from "../lib/utils";
 
@@ -80,23 +80,12 @@ function NavItem({
 
 export function Layout({ children }: { children: ReactNode }) {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const location = useLocation();
-  const { user, clear } = useAuthStore();
+  const { user } = useAuthStore();
 
   // На странице входа прячем верхний навбар — фокус на форме, шапка «уходит» вниз в футер.
   const isLogin = location.pathname === "/login";
   const year = new Date().getFullYear();
-
-  async function handleLogout() {
-    try {
-      await api.post("/auth/logout");
-    } catch {
-      /* игнорируем — всё равно чистим локально */
-    }
-    clear();
-    navigate("/");
-  }
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-x-clip">
@@ -110,7 +99,7 @@ export function Layout({ children }: { children: ReactNode }) {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-linear-to-b from-black/85 via-black/55 to-transparent"
         />
-        <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:flex-nowrap sm:gap-6 sm:px-6">
+        <nav className="mx-auto flex max-w-6xl items-center gap-4 px-4 py-3.5 sm:gap-6 sm:px-6">
           <Link to="/" className="flex shrink-0 items-center" aria-label={t("brand")}>
             <LogoMark className="h-12 w-auto drop-shadow-[0_2px_10px_rgba(212,169,95,0.25)] sm:h-14" />
           </Link>
@@ -130,20 +119,9 @@ export function Layout({ children }: { children: ReactNode }) {
               {t("nav.book")}
             </Link>
 
+            {/* Авторизованный — компактное меню (аватар + дропдаун); гость — «Вход». */}
             {user ? (
-              // Вторичные ссылки авторизованного: на мобиле переносятся во вторую
-              // строку (flex-wrap выше), на десктопе — в один ряд. Это убирает
-              // горизонтальный скролл после входа.
-              <div className="flex shrink-0 items-center gap-3">
-                <NavItem to="/dashboard" label={t("nav.dashboard")} />
-                {isAdmin(user) && <NavItem to="/admin" label={t("nav.admin")} />}
-                <button
-                  onClick={handleLogout}
-                  className="text-sm text-fg-muted transition-colors hover:text-fg"
-                >
-                  {t("nav.logout")}
-                </button>
-              </div>
+              <UserMenu />
             ) : (
               <NavItem to="/login" label={t("nav.login")} />
             )}
