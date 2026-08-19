@@ -99,7 +99,7 @@ export function Layout({ children }: { children: ReactNode }) {
   }
 
   return (
-    <div className="relative flex min-h-screen flex-col">
+    <div className="relative flex min-h-screen flex-col overflow-x-clip">
       <Scene />
 
       {!isLogin && (
@@ -110,9 +110,9 @@ export function Layout({ children }: { children: ReactNode }) {
           aria-hidden
           className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-32 bg-linear-to-b from-black/85 via-black/55 to-transparent"
         />
-        <nav className="mx-auto flex max-w-6xl items-center gap-6 px-4 py-3.5 sm:px-6">
-          <Link to="/" className="flex items-center" aria-label={t("brand")}>
-            <LogoMark className="h-14 w-auto drop-shadow-[0_2px_10px_rgba(212,169,95,0.25)]" />
+        <nav className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-4 gap-y-2 px-4 py-3.5 sm:flex-nowrap sm:gap-6 sm:px-6">
+          <Link to="/" className="flex shrink-0 items-center" aria-label={t("brand")}>
+            <LogoMark className="h-12 w-auto drop-shadow-[0_2px_10px_rgba(212,169,95,0.25)] sm:h-14" />
           </Link>
 
           <div className="hidden items-center gap-5 sm:flex">
@@ -121,17 +121,20 @@ export function Layout({ children }: { children: ReactNode }) {
             <NavItem to="/masters" label={t("nav.masters")} big />
           </div>
 
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex min-w-0 shrink items-center gap-2 sm:gap-3">
             <LanguageSwitcher />
             <Link
               to="/booking"
-              className="rounded-lg bg-accent-500 px-3.5 py-2 text-sm font-semibold text-ink-950 transition-colors hover:bg-accent-400"
+              className="shrink-0 rounded-lg bg-accent-500 px-3 py-2 text-sm font-semibold text-ink-950 transition-colors hover:bg-accent-400 sm:px-3.5"
             >
               {t("nav.book")}
             </Link>
 
             {user ? (
-              <div className="flex items-center gap-3">
+              // Вторичные ссылки авторизованного: на мобиле переносятся во вторую
+              // строку (flex-wrap выше), на десктопе — в один ряд. Это убирает
+              // горизонтальный скролл после входа.
+              <div className="flex shrink-0 items-center gap-3">
                 <NavItem to="/dashboard" label={t("nav.dashboard")} />
                 {isAdmin(user) && <NavItem to="/admin" label={t("nav.admin")} />}
                 <button
