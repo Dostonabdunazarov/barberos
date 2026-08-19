@@ -94,7 +94,7 @@ export function LogoLockup({ className }: { className?: string }) {
   const id = useId();
   const g = `url(#${id})`;
   return (
-    <svg viewBox="-20 0 480 250" className={className} fill="none" role="img" aria-label="BarberKing">
+    <svg viewBox="0 0 440 250" className={className} fill="none" role="img" aria-label="BarberKing">
       <defs>
         <linearGradient id={id} gradientUnits="userSpaceOnUse" x1="220" y1="20" x2="220" y2="230">
           <stop offset="0" stopColor="#f0d9a8" />
@@ -128,7 +128,13 @@ export function LogoLockup({ className }: { className?: string }) {
         letterSpacing="1"
         fill={g}
       >
-        <textPath href={`#${id}-arc`} startOffset="50%" textAnchor="middle">
+        <textPath
+          href={`#${id}-arc`}
+          startOffset="50%"
+          textAnchor="middle"
+          textLength="330"
+          lengthAdjust="spacingAndGlyphs"
+        >
           BARBERKING
         </textPath>
       </text>
