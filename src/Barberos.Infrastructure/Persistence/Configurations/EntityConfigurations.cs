@@ -115,3 +115,16 @@ public class ReviewConfiguration : IEntityTypeConfiguration<Review>
             .OnDelete(DeleteBehavior.Restrict);
     }
 }
+
+public class WorkPhotoConfiguration : IEntityTypeConfiguration<WorkPhoto>
+{
+    public void Configure(EntityTypeBuilder<WorkPhoto> b)
+    {
+        b.HasKey(x => x.Id);
+        b.Property(x => x.Url).IsRequired().HasMaxLength(400);
+        // Удаление мастера уносит его фото (портфолио не имеет смысла без мастера).
+        b.HasOne(x => x.Master).WithMany(m => m.WorkPhotos).HasForeignKey(x => x.MasterId)
+            .OnDelete(DeleteBehavior.Cascade);
+        b.HasIndex(x => new { x.MasterId, x.SortOrder });
+    }
+}

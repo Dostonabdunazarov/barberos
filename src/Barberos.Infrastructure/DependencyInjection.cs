@@ -5,6 +5,7 @@ using Barberos.Application.Availability;
 using Barberos.Application.Bookings;
 using Barberos.Application.Common;
 using Barberos.Application.Masters;
+using Barberos.Application.Portfolio;
 using Barberos.Application.Reviews;
 using Barberos.Application.Scheduling;
 using Barberos.Application.Services;
@@ -30,7 +31,11 @@ public static class DependencyInjection
             ?? throw new InvalidOperationException("Connection string 'Postgres' не задана.");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseNpgsql(connectionString));
+        {
+            options.UseNpgsql(connectionString);
+            if (configuration.GetValue("Database:DetailedErrors", false))
+                options.EnableDetailedErrors().EnableSensitiveDataLogging();
+        });
 
         services.AddScoped<IAppDbContext>(sp => sp.GetRequiredService<AppDbContext>());
 
@@ -68,6 +73,10 @@ public static class DependencyInjection
         // Отзывы и аналитика (Этап 4)
         services.AddScoped<IReviewService, ReviewService>();
         services.AddScoped<IAnalyticsService, AnalyticsService>();
+
+        // Портфолио работ мастера. IFileStorage регистрируется в API-слое
+        // (там доступен WebRootPath); сервис зависит от абстракции.
+        services.AddScoped<IWorkPhotoService, WorkPhotoService>();
 
         return services;
     }

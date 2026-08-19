@@ -2,8 +2,10 @@ using Barberos.Api.Auth;
 using Barberos.Api.Middleware;
 using Barberos.Api.RateLimiting;
 using Barberos.Api.Validation;
+using Barberos.Application.Abstractions;
 using Barberos.Application.Services;
 using Barberos.Infrastructure;
+using Barberos.Infrastructure.Storage;
 using Barberos.Infrastructure.Auth;
 using FluentValidation;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -58,6 +60,14 @@ builder.Services.Configure<ForwardedHeadersOptions>(options =>
 
 // Инфраструктура (EF Core + Postgres + auth-сервисы)
 builder.Services.AddInfrastructure(builder.Configuration);
+
+// Файловое хранилище загрузок (фото работ мастеров) — на локальном диске в wwwroot.
+// WebRootPath может быть null, если папки ещё нет: берём стандартный путь и создаём.
+var webRoot = builder.Environment.WebRootPath
+    ?? Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+Directory.CreateDirectory(webRoot);
+builder.Services.AddScoped<IFileStorage>(_ =>
+    new LocalFileStorage(new LocalFileStorageOptions { RootPath = webRoot }));
 
 // Аутентификация/авторизация (JWT bearer + policies)
 builder.Services.AddApiAuth();
@@ -117,6 +127,8 @@ app.UseSecurityHeaders();
 app.UseExceptionHandler();
 app.UseSerilogRequestLogging();
 app.UseHttpsRedirection();
+// Раздача загруженных файлов (фото работ) из wwwroot — публично, до авторизации.
+app.UseStaticFiles();
 app.UseCors(CorsPolicy);
 app.UseRateLimiter();
 app.UseAuthentication();

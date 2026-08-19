@@ -20,4 +20,10 @@ public interface IMasterCatalog
 
     /// <summary>Обновление профиля и набора услуг. Бросает NotFoundException, если не найден.</summary>
     Task<MasterDto> UpdateAsync(Guid id, UpdateMasterRequest request, CancellationToken ct = default);
+
+    /// <summary>
+    /// Загружает и устанавливает фото мастера из файла, возвращает обновлённый профиль.
+    /// Старый файл (если был загружен) удаляется. Бросает NotFoundException/ValidationAppException.
+    /// </summary>
+    Task<MasterDto> SetPhotoAsync(Guid id, Barberos.Application.Portfolio.UploadFile file, CancellationToken ct = default);
 }

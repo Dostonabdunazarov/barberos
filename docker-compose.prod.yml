@@ -41,6 +41,9 @@ services:
       # Cors__Origins__0, AllowedHosts, Bootstrap__Admin__*, ...).
     env_file:
       - .env
+    volumes:
+      # Загруженные фото работ переживают пересоздание контейнера.
+      - uploads:/app/wwwroot/uploads
     networks:
       - backend
     # Порт наружу НЕ публикуется — доступ через frontend/proxy.
@@ -74,6 +77,7 @@ services:
 
 volumes:
   pgdata:
+  uploads:
   certbot-www:
 
 networks:

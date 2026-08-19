@@ -21,3 +21,6 @@ frontend/.vite/
 # OS
 .DS_Store
 Thumbs.db
+
+# Runtime user uploads (served from wwwroot, backed by a docker volume in prod)
+src/Barberos.Api/wwwroot/uploads/

@@ -26,5 +26,13 @@ public sealed class UpdateMasterRequestValidator : AbstractValidator<UpdateMaste
         RuleFor(x => x.Name).NotEmpty().MaximumLength(120);
         RuleFor(x => x.Bio).MaximumLength(2000);
         RuleFor(x => x.PhotoUrl).MaximumLength(1000);
+
+        // Учётка опциональна. Если задан email — он должен быть валиден;
+        // если задан пароль — не короче 8. Пустые поля учётку не трогают.
+        When(x => !string.IsNullOrWhiteSpace(x.LoginEmail), () =>
+            RuleFor(x => x.LoginEmail).EmailAddress().MaximumLength(256));
+
+        When(x => !string.IsNullOrWhiteSpace(x.LoginPassword), () =>
+            RuleFor(x => x.LoginPassword).MinimumLength(8).MaximumLength(128));
     }
 }

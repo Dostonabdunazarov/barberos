@@ -1,10 +1,300 @@
 @import "tailwindcss";
 
+/* Локальные шрифты (self-hosted, без внешних CDN) — вариативные */
+@font-face {
+  font-family: "Cormorant Garamond";
+  src: url("/fonts/cormorant.ttf") format("truetype-variations");
+  font-weight: 300 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Inter";
+  src: url("/fonts/inter-variable.ttf") format("truetype-variations");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/*
+  Дизайн-система BarberKing — тёплая тёмная сцена барбершопа (single-theme by design).
+  Фон — многослойная «сцена» с эффектом глубины (параллакс-слои света и панелей),
+  весь контент — на парящих стеклянных поверхностях поверх неё.
+*/
+@theme {
+  /* Тёмная тёплая база — дерево/уголь, не нейтральный серый */
+  --color-ink-950: #0b0a09;
+  --color-ink-900: #14110d;
+  --color-ink-800: #1c1712;
+  --color-ink-700: #271f18;
+  --color-ink-600: #342a20;
+
+  /* Латунь / золото — единственный акцент (свет, CTA, активные состояния) */
+  --color-accent-300: #f0d9a8;
+  --color-accent-400: #e6c584;
+  --color-accent-500: #d4a95f;
+  --color-accent-600: #b98a3e;
+  --color-accent-700: #8f6528;
+
+  /* Медный тёплый свет в глубине сцены */
+  --color-ember: #b5652e;
+
+  /* Текст — тёплый белый и тёплый серый (нейтраль с уклоном в акцент) */
+  --color-fg: #f4f1ea;
+  --color-fg-muted: #a8a097;
+  --color-fg-subtle: #726a5f;
+
+  --font-display: "Cormorant Garamond", "Playfair Display", Georgia, serif;
+  --font-sans: "Inter", system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
 :root {
-  color-scheme: light dark;
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
 }
 
 body {
-  margin: 0;
-  font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-ink-950);
+  color: var(--color-fg);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* ────────────────────────────────────────────────────────────────────────────
+   Сцена-фон с глубиной. Несколько зафиксированных слоёв, каждый — отдельный
+   уровень: дальний свет ламп (боке), панели/зеркала, ближняя виньетка, зерно.
+   Параллакс задаётся переменными --par-x/--par-y (двигаются от мыши, см. Layout).
+   ──────────────────────────────────────────────────────────────────────────── */
+
+/* Общий контейнер сцены */
+.scene {
+  position: fixed;
+  inset: -8% -8% -8% -8%; /* запас, чтобы параллакс не открывал края */
+  z-index: -3;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 90% at 50% -10%, #1a140d 0%, var(--color-ink-950) 55%),
+    var(--color-ink-950);
+}
+
+/* Слой 0 (самый дальний) — фото интерьера барбершопа.
+   Тёплый затемняющий оверлей поверх фото, чтобы стекло и текст читались.
+   Двигается медленнее всех — дальний план. Заменить фон = поменять URL. */
+.scene__photo {
+  position: absolute;
+  inset: 0;
+  /* Статично (без параллакса), слегка отдалено (contain-подобно), затемнено под контент */
+  background:
+    linear-gradient(
+      to bottom,
+      rgba(9, 8, 7, 0.92) 0%,
+      rgba(9, 8, 7, 0.82) 14%,
+      rgba(9, 8, 7, 0.74) 45%,
+      rgba(9, 8, 7, 0.9) 100%
+    ),
+    url("/bg/bg3.jpg") center center / cover no-repeat;
+}
+
+/* Слой 1 (дальний) — тёплое боке от ламп; двигается сильнее всего */
+.scene__glow {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(calc(var(--par-x, 0) * 22px), calc(var(--par-y, 0) * 22px), 0);
+  background:
+    radial-gradient(40% 36% at 50% 8%, rgba(212, 169, 95, 0.16), transparent 70%),
+    radial-gradient(30% 28% at 82% 20%, rgba(181, 101, 46, 0.12), transparent 72%),
+    radial-gradient(34% 30% at 12% 24%, rgba(212, 169, 95, 0.10), transparent 72%);
+  filter: blur(10px);
+  will-change: transform;
+}
+
+/* Слой 2 (средний) — вертикальные полосы: панели/зеркала барбершопа */
+.scene__panels {
+  position: absolute;
+  inset: 0;
+  transform: translate3d(calc(var(--par-x, 0) * 10px), calc(var(--par-y, 0) * 10px), 0);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.018) 0px,
+    rgba(255, 255, 255, 0.018) 1px,
+    transparent 1px,
+    transparent 84px
+  );
+  mask-image: radial-gradient(120% 100% at 50% 40%, #000 40%, transparent 85%);
+  will-change: transform;
+}
+
+/* Слой 3 (ближний) — виньетка, прижимает взгляд к центру и добавляет глубины */
+.scene__vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    115% 100% at 50% 42%,
+    transparent 42%,
+    rgba(6, 5, 4, 0.55) 82%,
+    rgba(6, 5, 4, 0.85) 100%
+  );
+}
+
+/* Зерно — убирает бандинг градиентов, добавляет «плёночную» фактуру */
+.scene__grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene__glow,
+  .scene__panels {
+    transform: none !important;
+  }
+}
+
+@layer utilities {
+  /* Стеклянная поверхность — парит над сценой (глубокая тень = высота над фоном) */
+  .glass {
+    background: linear-gradient(
+      160deg,
+      rgba(40, 32, 24, 0.36),
+      rgba(20, 17, 13, 0.42)
+    );
+    backdrop-filter: blur(18px) saturate(1.25);
+    -webkit-backdrop-filter: blur(18px) saturate(1.25);
+    border: 1px solid rgba(240, 217, 168, 0.1);
+    box-shadow:
+      0 20px 48px -20px rgba(0, 0, 0, 0.75),
+      0 2px 8px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  }
+  .glass-strong {
+    background: linear-gradient(
+      160deg,
+      rgba(46, 37, 27, 0.5),
+      rgba(18, 15, 11, 0.58)
+    );
+    backdrop-filter: blur(28px) saturate(1.3);
+    -webkit-backdrop-filter: blur(28px) saturate(1.3);
+    border: 1px solid rgba(240, 217, 168, 0.14);
+    box-shadow:
+      0 32px 64px -24px rgba(0, 0, 0, 0.85),
+      0 4px 16px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  }
+
+  /* Матовая «пластина» (референс-стиль): плотная тёплая карточка, приподнятая
+     над сценой крупной мягкой тенью снизу + светлым бликом по верхней кромке. */
+  .card-plate {
+    position: relative;
+    background:
+      linear-gradient(
+        168deg,
+        rgba(52, 42, 31, 0.66) 0%,
+        rgba(30, 24, 18, 0.7) 45%,
+        rgba(18, 14, 10, 0.74) 100%
+      );
+    border: 1px solid rgba(240, 217, 168, 0.12);
+    box-shadow:
+      /* дальняя мягкая тень «парения» — как на референсе */
+      0 40px 80px -28px rgba(0, 0, 0, 0.9),
+      0 18px 40px -20px rgba(0, 0, 0, 0.6),
+      /* тонкий верхний блик и мягкая внутренняя тень снизу для объёма */
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -24px 40px -28px rgba(0, 0, 0, 0.55);
+  }
+  /* Светлый блик по верхней кромке пластины */
+  .card-plate::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      180deg,
+      rgba(240, 217, 168, 0.4),
+      transparent 22%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  /* Верхний блик стекла — тонкая светлая линия по кромке */
+  .glass-sheen {
+    position: relative;
+  }
+  .glass-sheen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(
+      160deg,
+      rgba(240, 217, 168, 0.35),
+      transparent 30%,
+      transparent 70%,
+      rgba(240, 217, 168, 0.08)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+  }
+
+  .font-display {
+    font-family: var(--font-display);
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  .text-gradient-accent {
+    background: linear-gradient(135deg, var(--color-accent-300), var(--color-accent-600));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-ink-900);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-ink-600);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-700);
 }

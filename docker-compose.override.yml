@@ -1,0 +1,6 @@
+# Local dev override: host port 5432 is taken by a native Postgres install,
+# so expose the barberos dev database on 5442 instead.
+services:
+  postgres:
+    ports:
+      - "5442:5432"

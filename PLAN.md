@@ -271,8 +271,8 @@ PATCH  /api/reviews/{id}/moderate   (admin)
 - [x] Настройка React + Vite проекта (роутер, react-query, zustand, axios, tailwind, заглушки страниц)
 - [x] docker-compose (Postgres + API + frontend) + Dockerfile'ы + nginx.conf
 - [x] CI: build/test/security (GitHub Actions) — `.github/workflows/ci.yml`: restore/build (`-warnaserror`)/test, gate уязвимых пакетов (`--vulnerable`), проверка синхронизации миграций, сборка Docker-образов (см. Этап 5)
-- [ ] Дизайн-система: тёмная тема, фон-фото + overlay, glass-стили (утилиты/компоненты), акцентный цвет, шрифты, shadcn/ui + Framer Motion
-- [ ] i18n: react-i18next, словари ru/uz (latn), RU по умолчанию, переключатель языка, сохранение выбора
+- [x] Дизайн-система: тёмная тема (единственная), фон-фото + overlay, glass-утилиты (`.glass`/`.glass-strong`), тёплый акцент, дисплейный/гротеск шрифты, Framer Motion; UI-примитивы (`Button`/`Card`/`Input`/`Modal`) вместо shadcn — Tailwind v4 `@theme`
+- [x] i18n: react-i18next + `i18next-browser-languagedetector`, словари `ru`/`uz` (latn), RU по умолчанию, переключатель языка в шапке, сохранение в localStorage, форматирование дат/цены (UZS, зона `Asia/Tashkent`)
 
 ### Этап 1 — Ядро и auth (1–1.5 нед)
 - [x] Домен + EF Core (DbContext + конфигурации), миграция сгенерирована
@@ -314,7 +314,29 @@ PATCH  /api/reviews/{id}/moderate   (admin)
 - [x] Инфраструктура деплоя (Docker Compose на VPS) — `docker-compose.prod.yml` (postgres+api+frontend+nginx TLS, только прокси наружу), hardened Dockerfile (non-root `$APP_UID`, кеш-restore), `deploy/nginx/barberos.conf` (TLS-терминация), `.env.example` (все секреты через env), runbook `DEPLOY.md`
 - [ ] Фактический деплой на staging → prod — выполняет владелец инфраструктуры по `DEPLOY.md` (нужны сервер, домен, TLS-сертификаты, секреты)
 
-> Frontend-этапы (дизайн-система, i18n, публичные экраны, кабинеты) из §8 — вне бэкенд-дорожки; отмечены в Этапе 0 как невыполненные.
+### Этап 6 — Frontend (React SPA) — ✅ выполнено
+
+- [x] Фундамент: API-клиент (`lib/api.ts`) с refresh-интерцептором (silent login по httpOnly cookie, единый refresh-промис против гонок), точные типы под контракты backend (числовые enum'ы, camelCase), `authStore` (access-токен только в памяти)
+- [x] Дизайн-система + i18n (см. Этап 0)
+- [x] Публичные экраны: Hero-главная с секциями услуг/мастеров, каталог услуг, список и профиль мастера с лентой отзывов и рейтингом
+- [x] Флоу бронирования (`BookingPage`): услуга → мастер (фильтр по услуге) → дата/слот (availability) → имя+телефон → экран успеха со ссылкой `manage_token` (копирование)
+- [x] Страница брони по `manage_token` (`ManageBookingPage`, только чтение) + форма отзыва по завершённой брони
+- [x] Вход персонала (`LoginPage`, email+пароль) + защищённые роуты (`RequireAuth`, ждёт silent refresh; admin-гейт)
+- [x] Кабинет мастера (`DashboardPage`): свои записи (сегодня/неделя) со сменой статуса, недельное расписание + time-off (`ScheduleEditor`)
+- [x] Админка (`AdminPage`): CRUD услуг, CRUD мастеров (+ опциональная учётка), все брони с фильтрами и пагинацией, модерация отзывов, аналитика (KPI + загрузка мастеров/популярные услуги)
+- [x] Сборка зелёная (`tsc`/`oxlint`/`vite build`), code-splitting кабинетов персонала (lazy-роуты)
+
+> Замена фонового фото барбершопа и реальных фото мастеров/услуг — за владельцем контента (см. `.app-bg` в `index.css` и поле `photoUrl`).
+
+### Этап 7 — Портфолио работ мастера (загрузка фото) — ✅ выполнено
+
+- [x] Backend: сущность `WorkPhoto` (BaseEntity, FK→Master, Cascade), DbSet, `WorkPhotoConfiguration`, миграция `AddWorkPhotos`
+- [x] Файловое хранилище за абстракцией `IFileStorage` → `LocalFileStorage` (пишет в `wwwroot/uploads/works/`, path-traversal защита); `app.UseStaticFiles()` для раздачи
+- [x] `WorkPhotoService`: список (по SortOrder), загрузка (валидация тип jpg/png/webp, размер ≤5 МБ, лимит 20 фото/мастер), удаление (запись + файл с диска)
+- [x] Endpoint'ы в `MastersController`: `GET {id}/works` (публично), `POST`/`DELETE {id}/works` (Staff + `EnsureCanManageAsync` — мастер своё, админ любое); `[RequestSizeLimit]`
+- [x] Frontend: публичная галерея на странице мастера, вкладка «Мои работы» в кабинете (`WorksManager`: загрузка файла, превью-сетка, удаление), хуки, i18n ru/uz
+- [x] Unit-тесты `WorkPhotoServiceTests` (9, с фейковым `IFileStorage`); E2E-проверка (загрузка/раздача/удаление/права/негатив) пройдена
+- [x] Prod-инфра: nginx проксирует `/uploads` на api + `client_max_body_size 10m` (внешний и фронт-контейнер); Docker volume `uploads` для сохранности фото при перезапуске
 
 **Ориентировочно MVP:** ~5–7 недель для одного разработчика full-stack.
 

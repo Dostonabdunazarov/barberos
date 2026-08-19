@@ -17,7 +17,7 @@ namespace Barberos.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -25,7 +25,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.Booking", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -76,7 +75,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.Master", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<string>("Bio")
@@ -109,7 +107,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.MasterService", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -134,7 +131,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -165,7 +161,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.Review", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<Guid>("BookingId")
@@ -199,7 +194,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.Schedule", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -227,7 +221,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.Service", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<int>("BufferMinutes")
@@ -261,7 +254,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.TimeOff", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -289,7 +281,6 @@ namespace Barberos.Infrastructure.Migrations
             modelBuilder.Entity("Barberos.Domain.Entities.User", b =>
                 {
                     b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
                     b.Property<DateTime>("CreatedAt")
@@ -320,6 +311,32 @@ namespace Barberos.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("Barberos.Domain.Entities.WorkPhoto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("MasterId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("SortOrder")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Url")
+                        .IsRequired()
+                        .HasMaxLength(400)
+                        .HasColumnType("character varying(400)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MasterId", "SortOrder");
+
+                    b.ToTable("WorkPhotos");
                 });
 
             modelBuilder.Entity("Barberos.Domain.Entities.Booking", b =>
@@ -422,6 +439,17 @@ namespace Barberos.Infrastructure.Migrations
                     b.Navigation("Master");
                 });
 
+            modelBuilder.Entity("Barberos.Domain.Entities.WorkPhoto", b =>
+                {
+                    b.HasOne("Barberos.Domain.Entities.Master", "Master")
+                        .WithMany("WorkPhotos")
+                        .HasForeignKey("MasterId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Master");
+                });
+
             modelBuilder.Entity("Barberos.Domain.Entities.Booking", b =>
                 {
                     b.Navigation("Review");
@@ -438,6 +466,8 @@ namespace Barberos.Infrastructure.Migrations
                     b.Navigation("Schedules");
 
                     b.Navigation("TimeOffs");
+
+                    b.Navigation("WorkPhotos");
                 });
 
             modelBuilder.Entity("Barberos.Domain.Entities.Service", b =>

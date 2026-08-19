@@ -1,6 +1,7 @@
 using Barberos.Api.Auth;
 using Barberos.Application.Common;
 using Barberos.Application.Masters;
+using Barberos.Application.Portfolio;
 using Barberos.Application.Reviews;
 using Barberos.Application.Scheduling;
 using Microsoft.AspNetCore.Authorization;
@@ -16,7 +17,8 @@ namespace Barberos.Api.Controllers;
 [ApiController]
 [Route("api/masters")]
 public class MastersController(
-    IMasterCatalog masters, IScheduleService schedule, IReviewService reviews) : ControllerBase
+    IMasterCatalog masters, IScheduleService schedule, IReviewService reviews,
+    IWorkPhotoService works) : ControllerBase
 {
     [HttpGet]
     [AllowAnonymous]
@@ -50,6 +52,28 @@ public class MastersController(
     [Authorize(Policy = AuthSetup.AdminPolicy)]
     public async Task<ActionResult<MasterDto>> Update(Guid id, UpdateMasterRequest request, CancellationToken ct)
         => Ok(await masters.UpdateAsync(id, request, ct));
+
+    /// <summary>Загрузка фото профиля мастера (admin или сам мастер). multipart/form-data, поле "file".</summary>
+    [HttpPost("{id:guid}/photo")]
+    [Authorize(Policy = AuthSetup.StaffPolicy)]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<ActionResult<MasterDto>> UploadPhoto(Guid id, IFormFile file, CancellationToken ct)
+    {
+        await EnsureCanManageAsync(id, ct);
+
+        if (file is null || file.Length == 0)
+            return BadRequest(new { message = "Файл не передан." });
+
+        await using var stream = file.OpenReadStream();
+        var upload = new Barberos.Application.Portfolio.UploadFile
+        {
+            Content = stream,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            Length = file.Length,
+        };
+        return Ok(await masters.SetPhotoAsync(id, upload, ct));
+    }
 
     // ── Расписание ───────────────────────────────────────────────────────────
 
@@ -92,6 +116,47 @@ public class MastersController(
     {
         await EnsureCanManageAsync(id, ct);
         await schedule.RemoveTimeOffAsync(id, timeOffId, ct);
+        return NoContent();
+    }
+
+    // ── Портфолио работ ────────────────────────────────────────────────────────
+
+    /// <summary>Публичная галерея работ мастера.</summary>
+    [HttpGet("{id:guid}/works")]
+    [AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<WorkPhotoDto>>> ListWorks(Guid id, CancellationToken ct)
+        => Ok(await works.ListAsync(id, ct));
+
+    /// <summary>Загрузка фото работы (admin или сам мастер). multipart/form-data, поле "file".</summary>
+    [HttpPost("{id:guid}/works")]
+    [Authorize(Policy = AuthSetup.StaffPolicy)]
+    [RequestSizeLimit(6 * 1024 * 1024)]
+    public async Task<ActionResult<WorkPhotoDto>> AddWork(Guid id, IFormFile file, CancellationToken ct)
+    {
+        await EnsureCanManageAsync(id, ct);
+
+        if (file is null || file.Length == 0)
+            return BadRequest(new { message = "Файл не передан." });
+
+        await using var stream = file.OpenReadStream();
+        var upload = new UploadFile
+        {
+            Content = stream,
+            FileName = file.FileName,
+            ContentType = file.ContentType,
+            Length = file.Length,
+        };
+        var created = await works.AddAsync(id, upload, ct);
+        return CreatedAtAction(nameof(ListWorks), new { id }, created);
+    }
+
+    /// <summary>Удаление фото работы (admin или сам мастер).</summary>
+    [HttpDelete("{id:guid}/works/{photoId:guid}")]
+    [Authorize(Policy = AuthSetup.StaffPolicy)]
+    public async Task<IActionResult> RemoveWork(Guid id, Guid photoId, CancellationToken ct)
+    {
+        await EnsureCanManageAsync(id, ct);
+        await works.DeleteAsync(id, photoId, ct);
         return NoContent();
     }
 

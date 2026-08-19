@@ -17,4 +17,5 @@ public class Master : BaseEntity
     public ICollection<TimeOff> TimeOffs { get; set; } = new List<TimeOff>();
     public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     public ICollection<Review> Reviews { get; set; } = new List<Review>();
+    public ICollection<WorkPhoto> WorkPhotos { get; set; } = new List<WorkPhoto>();
 }
