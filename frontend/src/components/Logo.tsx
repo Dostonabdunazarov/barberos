@@ -101,10 +101,6 @@ export function LogoLockup({ className }: { className?: string }) {
           <stop offset="0.5" stopColor="#e6c584" />
           <stop offset="1" stopColor="#c49a52" />
         </linearGradient>
-        {/* Дуга намеренно шире видимой части (уходит за края viewBox): даже при
-            особенностях центровки textPath в WebKit/iOS всё слово остаётся НА пути
-            с запасом, и крайние буквы (в т.ч. финальная G) не обрезаются. */}
-        <path id={`${id}-arc`} d="M -120 168 Q 220 78 560 168" fill="none" />
       </defs>
 
       {/* HAIR STYLE + боковые линии */}
@@ -123,18 +119,19 @@ export function LogoLockup({ className }: { className?: string }) {
       <line x1="95" y1="42" x2="145" y2="42" stroke="#8f6528" strokeWidth="1.5" />
       <line x1="295" y1="42" x2="345" y2="42" stroke="#8f6528" strokeWidth="1.5" />
 
-      {/* BARBERKING дугой */}
+      {/* BARBERKING — прямым текстом (без дуги): textPath в iOS Safari обрезал
+          финальную «G». Прямой центрированный текст рендерится надёжно везде. */}
       <text
+        x="220"
+        y="150"
         fontFamily="'Cormorant Garamond', Georgia, serif"
-        fontSize="46"
+        fontSize="52"
         fontWeight="700"
-        letterSpacing="0"
+        letterSpacing="1"
         textAnchor="middle"
         fill={g}
       >
-        <textPath href={`#${id}-arc`} startOffset="50%">
-          BARBERKING
-        </textPath>
+        BARBERKING
       </text>
 
       {/* Скрещённые ножницы */}
