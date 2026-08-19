@@ -101,7 +101,7 @@ export function LogoLockup({ className }: { className?: string }) {
           <stop offset="0.5" stopColor="#e6c584" />
           <stop offset="1" stopColor="#c49a52" />
         </linearGradient>
-        <path id={`${id}-arc`} d="M 34 133 Q 220 96 406 133" fill="none" />
+        <path id={`${id}-arc`} d="M 20 133 Q 220 92 420 133" fill="none" />
       </defs>
 
       {/* HAIR STYLE + боковые линии */}
@@ -123,18 +123,13 @@ export function LogoLockup({ className }: { className?: string }) {
       {/* BARBERKING дугой */}
       <text
         fontFamily="'Cormorant Garamond', Georgia, serif"
-        fontSize="58"
+        fontSize="50"
         fontWeight="700"
-        letterSpacing="1"
+        letterSpacing="0"
+        textAnchor="middle"
         fill={g}
       >
-        <textPath
-          href={`#${id}-arc`}
-          startOffset="50%"
-          textAnchor="middle"
-          textLength="330"
-          lengthAdjust="spacingAndGlyphs"
-        >
+        <textPath href={`#${id}-arc`} startOffset="50%">
           BARBERKING
         </textPath>
       </text>
