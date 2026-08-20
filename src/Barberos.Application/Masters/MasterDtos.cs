@@ -6,6 +6,7 @@ public record MasterDto(
     string Name,
     string? Bio,
     string? PhotoUrl,
+    string? PublicPhone,
     bool IsActive,
     Guid? UserId,
     IReadOnlyList<Guid> ServiceIds);
@@ -18,6 +19,7 @@ public record CreateMasterRequest(
     string Name,
     string? Bio,
     string? PhotoUrl,
+    string? PublicPhone,
     IReadOnlyList<Guid>? ServiceIds,
     string? LoginEmail,
     string? LoginPassword);
@@ -33,7 +35,14 @@ public record UpdateMasterRequest(
     string Name,
     string? Bio,
     string? PhotoUrl,
+    string? PublicPhone,
     bool IsActive,
     IReadOnlyList<Guid>? ServiceIds,
     string? LoginEmail = null,
     string? LoginPassword = null);
+
+/// <summary>
+/// Изменение публичного контакта мастера — доступно admin и самому мастеру.
+/// Пустая строка/null очищает номер (мастер может убрать контакт с витрины).
+/// </summary>
+public record UpdateMasterContactRequest(string? PublicPhone);

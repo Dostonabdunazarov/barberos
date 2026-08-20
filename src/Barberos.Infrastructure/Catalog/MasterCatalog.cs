@@ -67,6 +67,7 @@ public sealed class MasterCatalog(IAppDbContext db, IPasswordHasher passwordHash
             Name = request.Name.Trim(),
             Bio = request.Bio?.Trim(),
             PhotoUrl = request.PhotoUrl?.Trim(),
+            PublicPhone = Normalize(request.PublicPhone),
             IsActive = true,
         };
         db.Masters.Add(master);
@@ -87,6 +88,7 @@ public sealed class MasterCatalog(IAppDbContext db, IPasswordHasher passwordHash
         master.Name = request.Name.Trim();
         master.Bio = request.Bio?.Trim();
         master.PhotoUrl = request.PhotoUrl?.Trim();
+        master.PublicPhone = Normalize(request.PublicPhone);
         master.IsActive = request.IsActive;
 
         if (request.ServiceIds is not null)
@@ -96,6 +98,26 @@ public sealed class MasterCatalog(IAppDbContext db, IPasswordHasher passwordHash
 
         await db.SaveChangesAsync(ct);
         return ToDto(master);
+    }
+
+    public async Task<MasterDto> UpdateContactAsync(
+        Guid id, UpdateMasterContactRequest request, CancellationToken ct = default)
+    {
+        var master = await db.Masters
+            .Include(m => m.MasterServices)
+            .FirstOrDefaultAsync(m => m.Id == id, ct)
+            ?? throw new NotFoundException("Мастер не найден.");
+
+        master.PublicPhone = Normalize(request.PublicPhone);
+        await db.SaveChangesAsync(ct);
+        return ToDto(master);
+    }
+
+    /// <summary>Пустая строка и пробелы — это «контакта нет», храним как null.</summary>
+    private static string? Normalize(string? value)
+    {
+        var trimmed = value?.Trim();
+        return string.IsNullOrEmpty(trimmed) ? null : trimmed;
     }
 
     /// <summary>
@@ -236,6 +258,6 @@ public sealed class MasterCatalog(IAppDbContext db, IPasswordHasher passwordHash
     }
 
     private static MasterDto ToDto(Master m) => new(
-        m.Id, m.Name, m.Bio, m.PhotoUrl, m.IsActive, m.UserId,
+        m.Id, m.Name, m.Bio, m.PhotoUrl, m.PublicPhone, m.IsActive, m.UserId,
         m.MasterServices.Select(ms => ms.ServiceId).ToList());
 }

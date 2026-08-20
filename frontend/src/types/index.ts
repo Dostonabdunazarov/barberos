@@ -51,6 +51,8 @@ export interface Master {
   name: string;
   bio?: string | null;
   photoUrl?: string | null;
+  /** Публичный контакт мастера — показывается всем на витрине. */
+  publicPhone?: string | null;
   isActive: boolean;
   userId?: string | null;
   serviceIds: string[];

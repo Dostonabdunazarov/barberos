@@ -172,6 +172,7 @@ export interface CreateMasterBody {
   name: string;
   bio?: string | null;
   photoUrl?: string | null;
+  publicPhone?: string | null;
   serviceIds?: string[];
   loginEmail?: string | null;
   loginPassword?: string | null;
@@ -180,6 +181,7 @@ export interface UpdateMasterBody {
   name: string;
   bio?: string | null;
   photoUrl?: string | null;
+  publicPhone?: string | null;
   isActive: boolean;
   serviceIds?: string[];
   loginEmail?: string | null;
@@ -202,6 +204,21 @@ export function useUpdateMaster() {
   return useMutation({
     mutationFn: async ({ id, ...req }: { id: string } & UpdateMasterBody) => {
       const { data } = await api.put<Master>(`/masters/${id}`, req);
+      return data;
+    },
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ["masters"] }),
+  });
+}
+
+/**
+ * Изменение публичного контакта мастера (admin или сам мастер).
+ * Пустая строка убирает номер с витрины.
+ */
+export function useUpdateMasterContact() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ masterId, publicPhone }: { masterId: string; publicPhone: string | null }) => {
+      const { data } = await api.put<Master>(`/masters/${masterId}/contact`, { publicPhone });
       return data;
     },
     onSuccess: () => void qc.invalidateQueries({ queryKey: ["masters"] }),

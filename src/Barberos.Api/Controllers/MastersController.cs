@@ -53,6 +53,19 @@ public class MastersController(
     public async Task<ActionResult<MasterDto>> Update(Guid id, UpdateMasterRequest request, CancellationToken ct)
         => Ok(await masters.UpdateAsync(id, request, ct));
 
+    /// <summary>
+    /// Изменение публичного контакта мастера (admin или сам мастер).
+    /// Номер показывается всем на витрине; пустое значение убирает его.
+    /// </summary>
+    [HttpPut("{id:guid}/contact")]
+    [Authorize(Policy = AuthSetup.StaffPolicy)]
+    public async Task<ActionResult<MasterDto>> UpdateContact(
+        Guid id, UpdateMasterContactRequest request, CancellationToken ct)
+    {
+        await EnsureCanManageAsync(id, ct);
+        return Ok(await masters.UpdateContactAsync(id, request, ct));
+    }
+
     /// <summary>Загрузка фото профиля мастера (admin или сам мастер). multipart/form-data, поле "file".</summary>
     [HttpPost("{id:guid}/photo")]
     [Authorize(Policy = AuthSetup.StaffPolicy)]
@@ -176,6 +189,6 @@ public class MastersController(
         var master = await masters.GetAsync(masterId, ct);
         var currentUserId = User.GetUserId();
         if (master.UserId is null || master.UserId != currentUserId)
-            throw new ForbiddenException("Нельзя управлять расписанием другого мастера.");
+            throw new ForbiddenException("Нельзя управлять профилем другого мастера.");
     }
 }

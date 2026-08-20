@@ -24,3 +24,7 @@ Thumbs.db
 
 # Runtime user uploads (served from wwwroot, backed by a docker volume in prod)
 src/Barberos.Api/wwwroot/uploads/
+
+# Случайно попавшие в public/ временные файлы Excel (не ассеты витрины)
+frontend/public/**/*.xlsx
+frontend/public/**/~$*

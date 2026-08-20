@@ -40,6 +40,15 @@ export function formatDateTime(utcIso: string, locale: string): string {
   }).format(new Date(utcIso));
 }
 
+/**
+ * Номер для href="tel:" — из отображаемого номера убираем всё, кроме цифр
+ * и ведущего плюса (пробелы/скобки/дефисы в tel: не нужны).
+ */
+export function telHref(phone: string): string {
+  const digits = phone.replace(/[^\d+]/g, "");
+  return `tel:${digits.startsWith("+") ? "+" : ""}${digits.replace(/\+/g, "")}`;
+}
+
 /** Цена в сумах (UZS) без дробной части. */
 export function formatPrice(amount: number, locale: string): string {
   return new Intl.NumberFormat(locale, {

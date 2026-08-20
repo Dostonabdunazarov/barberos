@@ -10,6 +10,14 @@ public class Master : BaseEntity
     public string Name { get; set; } = null!;
     public string? Bio { get; set; }
     public string? PhotoUrl { get; set; }
+
+    /// <summary>
+    /// Публичный контактный номер мастера — показывается всем на витрине.
+    /// Это НЕ личный номер сотрудника: поле заполняется добровольно и
+    /// предназначено для связи клиента с мастером (звонок/мессенджер).
+    /// </summary>
+    public string? PublicPhone { get; set; }
+
     public bool IsActive { get; set; } = true;
 
     public ICollection<MasterService> MasterServices { get; set; } = new List<MasterService>();

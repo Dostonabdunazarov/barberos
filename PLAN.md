@@ -94,7 +94,8 @@ src/
 - **services** — `id, name, description, duration_minutes, buffer_minutes, price, is_active`
   - `buffer_minutes` — время после услуги (уборка/подготовка), учитывается при расчёте слотов
   - `price` — `numeric(12,2)`, в **сумах (UZS)**; валюта фиксирована (один барбершоп)
-- **masters** — `id, user_id (nullable), name, bio, photo_url, is_active`
+- **masters** — `id, user_id (nullable), name, bio, photo_url, public_phone (nullable), is_active`
+  - `public_phone` — публичный контакт мастера для клиентов (виден всем на витрине, заполняется добровольно)
 - **master_services** — связь мастер↔услуга (кто какую услугу оказывает) `many-to-many`
 - **schedules** — рабочие часы мастера `id, master_id, day_of_week, start_time, end_time`
 - **time_off** — отпуска/перерывы `id, master_id, start_at, end_at, reason`
@@ -218,6 +219,7 @@ PUT    /api/services/{id}           (admin)
 GET    /api/masters                 (публично)
 GET    /api/masters/{id}            (публично)
 POST   /api/masters                 (admin)     # создаёт мастера + учётку (email/пароль)
+PUT    /api/masters/{id}/contact    (master/admin) # публичный телефон; пустое значение убирает его с витрины
 
 # Availability
 GET    /api/availability?masterId=&serviceId=&date=   (публично)

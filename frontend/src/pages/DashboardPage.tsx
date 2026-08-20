@@ -6,12 +6,13 @@ import { useAuthStore, isAdmin } from "../store/authStore";
 import { StaffBookingCard } from "../components/StaffBookingCard";
 import { ScheduleEditor } from "../components/ScheduleEditor";
 import { WorksManager } from "../components/WorksManager";
+import { ContactEditor } from "../components/ContactEditor";
 import { LoadingState, ErrorState } from "../components/ui/misc";
 import { cn } from "../lib/utils";
 import { apiErrorMessage } from "../lib/api";
 
 type Range = "today" | "week";
-type Tab = "bookings" | "schedule" | "photos";
+type Tab = "bookings" | "schedule" | "photos" | "contact";
 
 /** Границы диапазона [from, to) в UTC ISO по локальным дням. */
 function rangeBounds(range: Range): { from: string; to: string } {
@@ -61,6 +62,11 @@ export function DashboardPage() {
             {t("works.tab")}
           </TabButton>
         )}
+        {canManageSchedule && (
+          <TabButton active={tab === "contact"} onClick={() => setTab("contact")}>
+            {t("dashboard.contact")}
+          </TabButton>
+        )}
       </div>
 
       {tab === "bookings" && (
@@ -105,6 +111,12 @@ export function DashboardPage() {
       {tab === "photos" && myMaster && (
         <div className="mt-6">
           <WorksManager masterId={myMaster.id} />
+        </div>
+      )}
+
+      {tab === "contact" && myMaster && (
+        <div className="mt-6">
+          <ContactEditor master={myMaster} />
         </div>
       )}
     </div>

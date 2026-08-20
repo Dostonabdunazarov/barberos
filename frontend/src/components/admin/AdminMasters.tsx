@@ -14,6 +14,7 @@ interface FormState {
   name: string;
   bio: string;
   photoUrl: string;
+  publicPhone: string;
   isActive: boolean;
   serviceIds: string[];
   loginEmail: string;
@@ -24,6 +25,7 @@ const empty: FormState = {
   name: "",
   bio: "",
   photoUrl: "",
+  publicPhone: "",
   isActive: true,
   serviceIds: [],
   loginEmail: "",
@@ -69,6 +71,7 @@ export function AdminMasters() {
       name: m.name,
       bio: m.bio ?? "",
       photoUrl: m.photoUrl ?? "",
+      publicPhone: m.publicPhone ?? "",
       isActive: m.isActive,
       serviceIds: m.serviceIds,
       loginEmail: "",
@@ -94,6 +97,7 @@ export function AdminMasters() {
       name: form.name.trim(),
       bio: form.bio.trim() || null,
       photoUrl: form.photoUrl.trim() || null,
+      publicPhone: form.publicPhone.trim() || null,
       serviceIds: form.serviceIds,
     };
     // Поля учётки шлём и при создании, и при редактировании — пустые не трогают учётку.
@@ -163,6 +167,17 @@ export function AdminMasters() {
           </Field>
           <Field label={t("admin.bio")}>
             <Textarea value={form.bio} onChange={(e) => setForm({ ...form, bio: e.target.value })} />
+          </Field>
+          <Field label={t("admin.publicPhone")}>
+            <Input
+              type="tel"
+              inputMode="tel"
+              autoComplete="off"
+              placeholder="+998 90 123-45-67"
+              value={form.publicPhone}
+              onChange={(e) => setForm({ ...form, publicPhone: e.target.value })}
+            />
+            <p className="mt-1 text-xs text-fg-subtle">{t("admin.publicPhoneHint")}</p>
           </Field>
           <Field label={t("admin.photo")}>
             <div className="flex items-center gap-4">

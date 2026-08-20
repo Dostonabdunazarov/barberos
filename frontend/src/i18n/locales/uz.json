@@ -51,7 +51,8 @@
     "reviews": "sharh",
     "noRating": "Hali baholar yo'q",
     "viewProfile": "Profil",
-    "bookWith": "Ustaga yozilish"
+    "bookWith": "Ustaga yozilish",
+    "callMaster": "Ustaga qo‘ng‘iroq qilish"
   },
   "works": {
     "title": "Ishlar",
@@ -157,7 +158,12 @@
     "to": "gacha",
     "saveSchedule": "Jadvalni saqlash",
     "reason": "Sabab",
-    "delete": "O'chirish"
+    "delete": "O'chirish",
+    "contactSaved": "Kontakt saqlandi",
+    "saveContact": "Kontaktni saqlash",
+    "contactHint": "Bu raqamni sahifangizdagi barcha tashrifchilar ko‘radi. Saytdan olib tashlash uchun maydonni bo‘sh qoldiring.",
+    "contactTitle": "Ommaviy kontakt",
+    "contact": "Kontakt"
   },
   "admin": {
     "title": "Boshqaruv",
@@ -184,6 +190,8 @@
     "photo": "Rasm",
     "uploadPhoto": "Rasm yuklash",
     "photoAfterSave": "Rasmni ustani saqlagandan keyin qo'shish mumkin.",
+    "publicPhone": "Ommaviy telefon",
+    "publicPhoneHint": "Usta sahifasida hammaga ko‘rinadi. Ko‘rsatmaslik uchun bo‘sh qoldiring.",
     "servicesOf": "Ko'rsatadigan xizmatlar",
     "loginEmail": "Kirish uchun email (ixtiyoriy)",
     "loginPassword": "Boshlang'ich parol (ixtiyoriy)",

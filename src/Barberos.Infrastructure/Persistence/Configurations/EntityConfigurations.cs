@@ -44,6 +44,7 @@ public class MasterConfiguration : IEntityTypeConfiguration<Master>
     {
         b.HasKey(x => x.Id);
         b.Property(x => x.Name).IsRequired().HasMaxLength(120);
+        b.Property(x => x.PublicPhone).HasMaxLength(20);
         b.HasOne(x => x.User).WithMany().HasForeignKey(x => x.UserId)
             .OnDelete(DeleteBehavior.SetNull);
     }
