@@ -4,7 +4,7 @@ import { useServices } from "../../lib/hooks";
 import { useCreateService, useUpdateService } from "../../lib/staffHooks";
 import { Card } from "../ui/Card";
 import { Button } from "../ui/Button";
-import { Input, Field } from "../ui/Input";
+import { Input, NumberInput, Field } from "../ui/Input";
 import { Modal } from "../ui/Modal";
 import { LoadingState, Spinner } from "../ui/misc";
 import { apiErrorMessage } from "../../lib/api";
@@ -15,11 +15,14 @@ import type { Service } from "../../types";
 interface FormState {
   name: string;
   description: string;
-  durationMinutes: number;
-  bufferMinutes: number;
-  price: number;
+  /** null = поле очищено пользователем; проверяется при отправке. */
+  durationMinutes: number | null;
+  bufferMinutes: number | null;
+  price: number | null;
   isActive: boolean;
 }
+
+const MAX_MINUTES = 24 * 60; // совпадает с ServiceValidators на бэкенде
 
 const empty: FormState = {
   name: "",
@@ -61,14 +64,20 @@ export function AdminServices() {
 
   const mutation = editing ? update : create;
 
+  // Пустые числовые поля не отправляем на сервер — браузерная валидация
+  // required у type="text" их не поймает.
+  const { durationMinutes, bufferMinutes, price } = form;
+  const numbersFilled = durationMinutes !== null && bufferMinutes !== null && price !== null;
+
   function submit(e: React.FormEvent) {
     e.preventDefault();
+    if (durationMinutes === null || bufferMinutes === null || price === null) return;
     const body = {
       name: form.name.trim(),
       description: form.description.trim() || null,
-      durationMinutes: Number(form.durationMinutes),
-      bufferMinutes: Number(form.bufferMinutes),
-      price: Number(form.price),
+      durationMinutes,
+      bufferMinutes,
+      price,
     };
     if (editing) {
       update.mutate(
@@ -124,31 +133,27 @@ export function AdminServices() {
           </Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("admin.durationMinutes")}>
-              <Input
-                type="number"
+              <NumberInput
                 min={1}
+                max={MAX_MINUTES}
                 value={form.durationMinutes}
-                onChange={(e) => setForm({ ...form, durationMinutes: +e.target.value })}
-                required
+                onChange={(v) => setForm({ ...form, durationMinutes: v })}
               />
             </Field>
             <Field label={t("admin.bufferMinutes")}>
-              <Input
-                type="number"
+              <NumberInput
                 min={0}
+                max={MAX_MINUTES}
                 value={form.bufferMinutes}
-                onChange={(e) => setForm({ ...form, bufferMinutes: +e.target.value })}
-                required
+                onChange={(v) => setForm({ ...form, bufferMinutes: v })}
               />
             </Field>
           </div>
           <Field label={t("admin.price")}>
-            <Input
-              type="number"
+            <NumberInput
               min={0}
               value={form.price}
-              onChange={(e) => setForm({ ...form, price: +e.target.value })}
-              required
+              onChange={(v) => setForm({ ...form, price: v })}
             />
           </Field>
           {editing && (
@@ -168,7 +173,7 @@ export function AdminServices() {
             <Button type="button" variant="ghost" onClick={() => setOpen(false)}>
               {t("common.cancel")}
             </Button>
-            <Button type="submit" disabled={mutation.isPending}>
+            <Button type="submit" disabled={mutation.isPending || !numbersFilled}>
               {mutation.isPending && <Spinner className="h-4 w-4" />}
               {t("common.save")}
             </Button>
