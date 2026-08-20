@@ -3,8 +3,9 @@ import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import type { Master } from "../types";
 import { Card } from "./ui/Card";
-import { StarRating } from "./ui/misc";
+import { StarRating, PhoneIcon } from "./ui/misc";
 import { useMasterReviews } from "../lib/hooks";
+import { formatPhone } from "../lib/utils";
 
 /** Карточка мастера с агрегированным рейтингом; ведёт на профиль. */
 export function MasterCard({ master }: { master: Master }) {
@@ -45,6 +46,17 @@ export function MasterCard({ master }: { master: Master }) {
                 <span className="text-fg-subtle">{t("masters.noRating")}</span>
               )}
             </div>
+            {/*
+              Номер здесь — просто текст, а не ссылка tel:: вся карточка уже
+              обёрнута в <Link>, а вложенная ссылка внутри ссылки невалидна.
+              Кликабельный номер — на странице профиля.
+            */}
+            {master.publicPhone && (
+              <div className="mt-2 flex items-center gap-2 text-sm text-fg-subtle">
+                <PhoneIcon className="h-3.5 w-3.5" />
+                <span dir="ltr">{formatPhone(master.publicPhone)}</span>
+              </div>
+            )}
           </div>
         </Card>
       </Link>

@@ -3,10 +3,10 @@ import { Link, useParams } from "react-router-dom";
 import { useMaster, useMasterReviews, useMasterWorks } from "../lib/hooks";
 import { Card } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
-import { LoadingState, ErrorState, StarRating } from "../components/ui/misc";
+import { LoadingState, ErrorState, StarRating, PhoneIcon } from "../components/ui/misc";
 import { apiErrorMessage } from "../lib/api";
 import { useLocale } from "../i18n/useLocale";
-import { formatDate, telHref } from "../lib/utils";
+import { formatDate, formatPhone, telHref } from "../lib/utils";
 
 export function MasterProfilePage() {
   const { t } = useTranslation();
@@ -52,18 +52,22 @@ export function MasterProfilePage() {
             </div>
             {m.bio && <p className="mt-4 text-fg-muted">{m.bio}</p>}
             {m.publicPhone && (
-              <a
-                href={telHref(m.publicPhone)}
-                className="mt-4 inline-flex items-center gap-2 text-sm text-fg-muted transition-colors hover:text-accent-400"
-                aria-label={t("masters.callMaster")}
-              >
-                <PhoneIcon />
-                <span dir="ltr">{m.publicPhone}</span>
-              </a>
+              <div className="mt-4">
+                <a
+                  href={telHref(m.publicPhone)}
+                  className="inline-flex items-center gap-2 text-sm text-fg-muted transition-colors hover:text-accent-400"
+                  aria-label={t("masters.callMaster")}
+                >
+                  <PhoneIcon />
+                  <span dir="ltr">{formatPhone(m.publicPhone)}</span>
+                </a>
+              </div>
             )}
-            <Link to="/booking" state={{ masterId: m.id }} className="mt-6 inline-block">
-              <Button>{t("masters.bookWith")}</Button>
-            </Link>
+            <div className="mt-6">
+              <Link to="/booking" state={{ masterId: m.id }}>
+                <Button>{t("masters.bookWith")}</Button>
+              </Link>
+            </div>
           </div>
         </div>
       </Card>
@@ -117,23 +121,5 @@ export function MasterProfilePage() {
         )}
       </section>
     </div>
-  );
-}
-
-/** Иконка трубки для публичного контакта мастера. */
-function PhoneIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-      className="h-4 w-4 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.8"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.2a2 2 0 0 1 2.1-.5c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2Z" />
-    </svg>
   );
 }

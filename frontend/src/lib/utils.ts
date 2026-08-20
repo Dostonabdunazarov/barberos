@@ -49,6 +49,20 @@ export function telHref(phone: string): string {
   return `tel:${digits.startsWith("+") ? "+" : ""}${digits.replace(/\+/g, "")}`;
 }
 
+/**
+ * Человекочитаемый номер: +998901234567 → +998 90 123-45-67.
+ * Узбекские номера (12 цифр после +998) разбиваются по формату оператора;
+ * всё остальное возвращаем как есть — вдруг мастер указал зарубежный номер.
+ */
+export function formatPhone(phone: string): string {
+  const digits = phone.replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("998")) {
+    const [, code, a, b, c] = /^998(\d{2})(\d{3})(\d{2})(\d{2})$/.exec(digits)!;
+    return `+998 ${code} ${a}-${b}-${c}`;
+  }
+  return phone;
+}
+
 /** Цена в сумах (UZS) без дробной части. */
 export function formatPrice(amount: number, locale: string): string {
   return new Intl.NumberFormat(locale, {
